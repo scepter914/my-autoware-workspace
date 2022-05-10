@@ -1,0 +1,22 @@
+<launch>
+  <!-- Input -->
+  <arg name="input/data" default="~/input/data" />
+
+  <!-- Output -->
+  <arg name="output/data" default="~/output/data" />
+
+  <!-- Parameter -->
+  <arg name="config_file" default="$(find-pkg-share radar_tracks_msgs_converter)/config/radar_tracks_msgs_converter.param.yaml" />
+
+  <!-- Node -->
+  <node pkg="radar_tracks_msgs_converter" exec="radar_tracks_msgs_converter_node" name="radar_tracks_msgs_converter" output="screen">
+    <!-- Input -->
+    <remap from="~/input/data" to="$(var input/data)"/>
+
+    <!-- Output -->
+    <remap from="~/output/data" to="$(var output/data)"/>
+
+    <!-- Parameter -->
+    <param from="$(var config_file)" />
+  </node>
+</launch>
