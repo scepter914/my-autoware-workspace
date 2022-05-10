@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2021 Kenji Miyake
+// Copyright 2021 TIER IV, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,13 +20,14 @@
 #include <string>
 #include <vector>
 
-#include "example_interfaces/msg/int32.hpp"
-#include "radar_tracks_msgs_converter/radar_tracks_msgs_converter.hpp"
+#include "autoware_auto_perception_msgs/msg/tracked_objects.hpp"
+#include "radar_msgs/msg/radar_tracks.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace radar_tracks_msgs_converter
 {
-using example_interfaces::msg::Int32;
+using autoware_auto_perception_msgs::msg::TrackedObjects;
+using radar_msgs::msg::RadarTracks;
 
 class RadarTracksMsgsConverterNode : public rclcpp::Node
 {
@@ -37,20 +37,21 @@ public:
   struct NodeParam
   {
     double update_rate_hz{};
+    bool use_twist_compensation{};
   };
 
 private:
   // Subscriber
-  rclcpp::Subscription<Int32>::SharedPtr sub_data_{};
+  rclcpp::Subscription<RadarTracks>::SharedPtr sub_data_{};
 
   // Callback
-  void onData(const Int32::ConstSharedPtr msg);
+  void onData(const RadarTracks::ConstSharedPtr msg);
 
   // Data Buffer
-  Int32::ConstSharedPtr data_{};
+  RadarTracks::ConstSharedPtr radar_data_{};
 
   // Publisher
-  rclcpp::Publisher<Int32>::SharedPtr pub_data_{};
+  rclcpp::Publisher<TrackedObjects>::SharedPtr pub_data_{};
 
   // Timer
   rclcpp::TimerBase::SharedPtr timer_{};
@@ -67,10 +68,7 @@ private:
   NodeParam node_param_{};
 
   // Core
-  RadarTracksMsgsConverter::Input input_{};
-  RadarTracksMsgsConverter::Output output_{};
-  RadarTracksMsgsConverter::Param core_param_{};
-  std::unique_ptr<RadarTracksMsgsConverter> radar_tracks_msgs_converter_{};
+  TrackedObjects convertRadarTrackToTrackedObjects(const RadarTracks::ConstSharedPtr radar_tracks);
 };
 
 }  // namespace radar_tracks_msgs_converter

@@ -18,7 +18,6 @@ ament_auto_find_build_dependencies()
 
 ## Targets
 ament_auto_add_library(radar_tracks_msgs_converter_node_component SHARED
-  src/radar_tracks_msgs_converter_node/radar_tracks_msgs_converter.cpp
   src/radar_tracks_msgs_converter_node/radar_tracks_msgs_converter_node.cpp
 )
 
@@ -38,6 +37,5 @@ endif()
 ## Package
 ament_auto_package(
   INSTALL_TO_SHARE
-    config
     launch
 )

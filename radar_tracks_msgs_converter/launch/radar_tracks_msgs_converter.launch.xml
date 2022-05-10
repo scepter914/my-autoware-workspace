@@ -1,22 +1,13 @@
 <launch>
-  <!-- Input -->
-  <arg name="input/data" default="~/input/data" />
+  <arg name="input/radar_objects" default="~/input/radar_objects" />
+  <arg name="output/radar_objects" default="~/output/radar_objects" />
+  <arg name="update_rate_hz" default="20.0" />
+  <arg name="use_twist_compensation" default="false" />
 
-  <!-- Output -->
-  <arg name="output/data" default="~/output/data" />
-
-  <!-- Parameter -->
-  <arg name="config_file" default="$(find-pkg-share radar_tracks_msgs_converter)/config/radar_tracks_msgs_converter.param.yaml" />
-
-  <!-- Node -->
   <node pkg="radar_tracks_msgs_converter" exec="radar_tracks_msgs_converter_node" name="radar_tracks_msgs_converter" output="screen">
-    <!-- Input -->
-    <remap from="~/input/data" to="$(var input/data)"/>
-
-    <!-- Output -->
-    <remap from="~/output/data" to="$(var output/data)"/>
-
-    <!-- Parameter -->
-    <param from="$(var config_file)" />
+    <remap from="~/input/radar_objects" to="$(var input/radar_objects)"/>
+    <remap from="~/output/radar_objects" to="$(var output/radar_objects)"/>
+    <arg name="update_rate_hz" value="$(var update_rate_hz)"/>
+    <arg name="use_twist_compensation" value="$(var use_twist_compensation)"/>
   </node>
 </launch>

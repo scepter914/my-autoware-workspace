@@ -51,25 +51,21 @@ RadarTracksMsgsConverterNode::RadarTracksMsgsConverterNode(const rclcpp::NodeOpt
 : Node("radar_tracks_msgs_converter", node_options)
 {
   // Parameter Server
-  set_param_res_ =
-    this->add_on_set_parameters_callback(std::bind(&RadarTracksMsgsConverterNode::onSetParam, this, _1));
+  set_param_res_ = this->add_on_set_parameters_callback(
+    std::bind(&RadarTracksMsgsConverterNode::onSetParam, this, _1));
 
   // Node Parameter
-  node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
-
-  // Core Parameter
-  core_param_.data = declare_parameter<int>("core_params.data");
-
-  // Core
-  radar_tracks_msgs_converter_ = std::make_unique<RadarTracksMsgsConverter>(get_logger());
-  radar_tracks_msgs_converter_->setParam(core_param_);
+  node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 20.0);
+  node_param_.use_twist_compensation =
+    declare_parameter<bool>("node_params.use_twist_compensation", false);
 
   // Subscriber
-  sub_data_ = create_subscription<Int32>(
-    "~/input/data", rclcpp::QoS{1}, std::bind(&RadarTracksMsgsConverterNode::onData, this, _1));
+  sub_data_ = create_subscription<RadarTracks>(
+    "~/input/radar_objects", rclcpp::QoS{1},
+    std::bind(&RadarTracksMsgsConverterNode::onData, this, _1));
 
   // Publisher
-  pub_data_ = create_publisher<Int32>("~/output/data", 1);
+  pub_data_ = create_publisher<TrackedObjects>("~/output/radar_objects", 1);
 
   // Timer
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
@@ -77,7 +73,10 @@ RadarTracksMsgsConverterNode::RadarTracksMsgsConverterNode(const rclcpp::NodeOpt
     this, get_clock(), update_period_ns, std::bind(&RadarTracksMsgsConverterNode::onTimer, this));
 }
 
-void RadarTracksMsgsConverterNode::onData(const Int32::ConstSharedPtr msg) { data_ = msg; }
+void RadarTracksMsgsConverterNode::onData(const RadarTracks::ConstSharedPtr msg)
+{
+  radar_data_ = msg;
+}
 
 rcl_interfaces::msg::SetParametersResult RadarTracksMsgsConverterNode::onSetParam(
   const std::vector<rclcpp::Parameter> & params)
@@ -92,27 +91,12 @@ rcl_interfaces::msg::SetParametersResult RadarTracksMsgsConverterNode::onSetPara
 
       // Update params
       update_param(params, "node_params.update_rate_hz", p.update_rate_hz);
+      update_param(params, "node_params.use_twist_compensation", p.use_twist_compensation);
 
       // Copy back to member variable
       node_param_ = p;
     }
 
-    // Core Parameter
-    {
-      // Copy to local variable
-      auto p = core_param_;
-
-      // Update params
-      update_param(params, "core_params.data", p.data);
-
-      // Copy back to member variable
-      core_param_ = p;
-
-      // Set parameter to instance
-      if (radar_tracks_msgs_converter_) {
-        radar_tracks_msgs_converter_->setParam(core_param_);
-      }
-    }
   } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
     result.successful = false;
     result.reason = e.what();
@@ -126,7 +110,7 @@ rcl_interfaces::msg::SetParametersResult RadarTracksMsgsConverterNode::onSetPara
 
 bool RadarTracksMsgsConverterNode::isDataReady()
 {
-  if (!data_) {
+  if (!radar_data_) {
     RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for data msg...");
     return false;
   }
@@ -140,19 +124,8 @@ void RadarTracksMsgsConverterNode::onTimer()
     return;
   }
 
-  // Set input data
-  RadarTracksMsgsConverter::Input input;
-
-  input.data = data_->data;
-
-  // Update
-  output_ = radar_tracks_msgs_converter_->update(input);
-
-  // Sample
-  pub_data_->publish(example_interfaces::build<Int32>().data(output_.data));
-  // pub_data->publish(hoge_msgs);
-  
-  RCLCPP_INFO(get_logger(), "input, output: %d, %d", input_.data, output_.data);
+  TrackedObjects tracked_objects = convertRadarTrackToTrackedObjects(radar_data_);
+  pub_data_->publish(tracked_objects);
 }
 
 }  // namespace radar_tracks_msgs_converter
