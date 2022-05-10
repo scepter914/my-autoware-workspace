@@ -128,7 +128,61 @@ void RadarTracksMsgsConverterNode::onTimer()
   pub_data_->publish(tracked_objects);
 }
 
-}  // namespace radar_tracks_msgs_converter
+TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects(
+  const RadarTracks::ConstSharedPtr radar_tracks)
+{
+  TrackedObjects tracked_objects;
+  tracked_objects.header = radar_tracks->header;
+  for (const auto & radar_track : radar_tracks->tracks) {
+    TrackedObject tracked_object;
+
+    tracked_object.object_id = radar_track.uuid;
+    tracked_object.existence_probability = 1.0;
+
+    //kinematics
+
+    // classification
+    ObjectClassification classification;
+    classification.probability = 1.0;
+    classification.label = convertClassification(radar_track.classification);
+    tracked_object.classification.emplace_back(classification);
+
+    tracked_objects.objects.emplace_back(tracked_object);
+  }
+  /*
+  - autoware_auto_perception_msgs::msg::TrackedObjectKinematics kinematics;
+    - geometry_msgs::msg::PoseWithCovariance pose_with_covariance;
+    - uint8 orientation_availability;
+    - geometry_msgs::msg::TwistWithCovariance twist_with_covariance;
+    - geometry_msgs::msg::AccelWithCovariance acceleration_with_covariance;
+    - boolean is_stationary;
+  - autoware_auto_perception_msgs::msg::Shape shape;
+  */
+}
+
+uint8_t RadarTracksMsgsConverterNode::convertClassification(const uint16_t classification)
+{
+  if (classification == 32000) {
+    return ObjectClassification::UNKNOWN;
+  } else if (classification == 32001) {
+    return ObjectClassification::CAR;
+  } else if (classification == 32002) {
+    return ObjectClassification::TRUCK;
+  } else if (classification == 32003) {
+    return ObjectClassification::BUS;
+  } else if (classification == 32004) {
+    return ObjectClassification::TRAILER;
+  } else if (classification == 32005) {
+    return ObjectClassification::MOTORCYCLE;
+  } else if (classification == 32006) {
+    return ObjectClassification::BICYCLE;
+  } else if (classification == 32007) {
+    return ObjectClassification::PEDESTRIAN;
+  } else {
+    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "Receive unknown label for RadarTracks");
+    return ObjectClassification::UNKNOWN;
+  }  // namespace radar_tracks_msgs_converter
+}
 
 #include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(radar_tracks_msgs_converter::RadarTracksMsgsConverterNode)

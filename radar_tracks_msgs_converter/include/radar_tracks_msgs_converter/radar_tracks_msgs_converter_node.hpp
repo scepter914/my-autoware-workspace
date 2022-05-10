@@ -26,6 +26,8 @@
 
 namespace radar_tracks_msgs_converter
 {
+using autoware_auto_perception_msgs::msg::ObjectClassification;
+using autoware_auto_perception_msgs::msg::TrackedObject;
 using autoware_auto_perception_msgs::msg::TrackedObjects;
 using radar_msgs::msg::RadarTracks;
 
@@ -69,6 +71,7 @@ private:
 
   // Core
   TrackedObjects convertRadarTrackToTrackedObjects(const RadarTracks::ConstSharedPtr radar_tracks);
+  uint8_t convertClassification(const uint16_t classification);
 };
 
 }  // namespace radar_tracks_msgs_converter
