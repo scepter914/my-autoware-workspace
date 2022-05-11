@@ -216,3 +216,4 @@ uint8_t RadarTracksMsgsConverterNode::convertClassification(const uint16_t class
 
 #include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(radar_tracks_msgs_converter::RadarTracksMsgsConverterNode)
+}
