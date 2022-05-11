@@ -27,7 +27,9 @@
 namespace radar_tracks_msgs_converter
 {
 using autoware_auto_perception_msgs::msg::ObjectClassification;
+using autoware_auto_perception_msgs::msg::Shape;
 using autoware_auto_perception_msgs::msg::TrackedObject;
+using autoware_auto_perception_msgs::msg::TrackedObjectKinematics;
 using autoware_auto_perception_msgs::msg::TrackedObjects;
 using radar_msgs::msg::RadarTracks;
 

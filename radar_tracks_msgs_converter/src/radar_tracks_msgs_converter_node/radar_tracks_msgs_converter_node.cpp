@@ -139,7 +139,46 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects(
     tracked_object.object_id = radar_track.uuid;
     tracked_object.existence_probability = 1.0;
 
-    //kinematics
+    tracked_object.shape.type = Shape::BOUNDING_BOX;
+    tracked_object.shape.dimensions = radar_track.size;
+
+    // kinematics
+    TrackedObjectKinematics kinematics;
+    kinematics.orientation_availability = TrackedObjectKinematics::AVAILABLE;
+    kinematics.is_stationary = false;
+
+    kinematics.pose_with_covariance.pose.position = radar_track.position;
+    kinematics.pose_with_covariance.covariance[0] = radar_track.position_covariance[0];
+    kinematics.pose_with_covariance.covariance[1] = radar_track.position_covariance[1];
+    kinematics.pose_with_covariance.covariance[2] = radar_track.position_covariance[2];
+    kinematics.pose_with_covariance.covariance[6] = radar_track.position_covariance[1];
+    kinematics.pose_with_covariance.covariance[7] = radar_track.position_covariance[3];
+    kinematics.pose_with_covariance.covariance[8] = radar_track.position_covariance[4];
+    kinematics.pose_with_covariance.covariance[12] = radar_track.position_covariance[2];
+    kinematics.pose_with_covariance.covariance[13] = radar_track.position_covariance[4];
+    kinematics.pose_with_covariance.covariance[14] = radar_track.position_covariance[5];
+
+    kinematics.twist_with_covariance.covariance[0] = radar_track.velocity_covariance[0];
+    kinematics.twist_with_covariance.covariance[1] = radar_track.velocity_covariance[1];
+    kinematics.twist_with_covariance.covariance[2] = radar_track.velocity_covariance[2];
+    kinematics.twist_with_covariance.covariance[6] = radar_track.velocity_covariance[1];
+    kinematics.twist_with_covariance.covariance[7] = radar_track.velocity_covariance[3];
+    kinematics.twist_with_covariance.covariance[8] = radar_track.velocity_covariance[4];
+    kinematics.twist_with_covariance.covariance[12] = radar_track.velocity_covariance[2];
+    kinematics.twist_with_covariance.covariance[13] = radar_track.velocity_covariance[4];
+    kinematics.twist_with_covariance.covariance[14] = radar_track.velocity_covariance[5];
+
+    kinematics.acceleration_with_covariance.covariance[0] = radar_track.acceleration_covariance[0];
+    kinematics.acceleration_with_covariance.covariance[1] = radar_track.acceleration_covariance[1];
+    kinematics.acceleration_with_covariance.covariance[2] = radar_track.acceleration_covariance[2];
+    kinematics.acceleration_with_covariance.covariance[6] = radar_track.acceleration_covariance[1];
+    kinematics.acceleration_with_covariance.covariance[7] = radar_track.acceleration_covariance[3];
+    kinematics.acceleration_with_covariance.covariance[8] = radar_track.acceleration_covariance[4];
+    kinematics.acceleration_with_covariance.covariance[12] = radar_track.acceleration_covariance[2];
+    kinematics.acceleration_with_covariance.covariance[13] = radar_track.acceleration_covariance[4];
+    kinematics.acceleration_with_covariance.covariance[14] = radar_track.acceleration_covariance[5];
+
+    tracked_object.kinematics = kinematics;
 
     // classification
     ObjectClassification classification;
@@ -149,15 +188,6 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects(
 
     tracked_objects.objects.emplace_back(tracked_object);
   }
-  /*
-  - autoware_auto_perception_msgs::msg::TrackedObjectKinematics kinematics;
-    - geometry_msgs::msg::PoseWithCovariance pose_with_covariance;
-    - uint8 orientation_availability;
-    - geometry_msgs::msg::TwistWithCovariance twist_with_covariance;
-    - geometry_msgs::msg::AccelWithCovariance acceleration_with_covariance;
-    - boolean is_stationary;
-  - autoware_auto_perception_msgs::msg::Shape shape;
-  */
 }
 
 uint8_t RadarTracksMsgsConverterNode::convertClassification(const uint16_t classification)
