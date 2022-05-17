@@ -159,6 +159,7 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects(
     kinematics.pose_with_covariance.covariance[13] = radar_track.position_covariance[4];
     kinematics.pose_with_covariance.covariance[14] = radar_track.position_covariance[5];
 
+    kinematics.twist_with_covariance.twist.linear = radar_track.velocity;
     kinematics.twist_with_covariance.covariance[0] = radar_track.velocity_covariance[0];
     kinematics.twist_with_covariance.covariance[1] = radar_track.velocity_covariance[1];
     kinematics.twist_with_covariance.covariance[2] = radar_track.velocity_covariance[2];
