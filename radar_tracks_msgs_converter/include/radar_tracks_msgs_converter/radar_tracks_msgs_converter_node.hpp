@@ -12,17 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RADAR_TRACKS_MSGS_CONVERTER__RADAR_TRACKS_MSGS_CONVERTER_NODE_HPP__
-#define RADAR_TRACKS_MSGS_CONVERTER__RADAR_TRACKS_MSGS_CONVERTER_NODE_HPP__
+// #ifndef RADAR_TRACKS_MSGS_CONVERTER__RADAR_TRACKS_MSGS_CONVERTER_NODE_HPP__
+// #define RADAR_TRACKS_MSGS_CONVERTER__RADAR_TRACKS_MSGS_CONVERTER_NODE_HPP__
+
+#include "rclcpp/rclcpp.hpp"
+
+#include "autoware_auto_perception_msgs/msg/object_classification.hpp"
+#include "autoware_auto_perception_msgs/msg/shape.hpp"
+#include "autoware_auto_perception_msgs/msg/tracked_object.hpp"
+#include "autoware_auto_perception_msgs/msg/tracked_object_kinematics.hpp"
+#include "autoware_auto_perception_msgs/msg/tracked_objects.hpp"
+#include "radar_msgs/msg/radar_tracks.hpp"
 
 #include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "autoware_auto_perception_msgs/msg/tracked_objects.hpp"
-#include "radar_msgs/msg/radar_tracks.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 namespace radar_tracks_msgs_converter
 {
@@ -78,4 +83,7 @@ private:
 
 }  // namespace radar_tracks_msgs_converter
 
-#endif  // RADAR_TRACKS_MSGS_CONVERTER__RADAR_TRACKS_MSGS_CONVERTER_NODE_HPP__
+#include <rclcpp_components/register_node_macro.hpp>
+RCLCPP_COMPONENTS_REGISTER_NODE(radar_tracks_msgs_converter::RadarTracksMsgsConverterNode)
+
+// #endif

@@ -55,9 +55,8 @@ RadarTracksMsgsConverterNode::RadarTracksMsgsConverterNode(const rclcpp::NodeOpt
     std::bind(&RadarTracksMsgsConverterNode::onSetParam, this, _1));
 
   // Node Parameter
-  node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 20.0);
-  node_param_.use_twist_compensation =
-    declare_parameter<bool>("node_params.use_twist_compensation", false);
+  node_param_.update_rate_hz = declare_parameter<double>("update_rate_hz", 20.0);
+  node_param_.use_twist_compensation = declare_parameter<bool>("use_twist_compensation", false);
 
   // Subscriber
   sub_data_ = create_subscription<RadarTracks>(
@@ -90,8 +89,8 @@ rcl_interfaces::msg::SetParametersResult RadarTracksMsgsConverterNode::onSetPara
       auto p = node_param_;
 
       // Update params
-      update_param(params, "node_params.update_rate_hz", p.update_rate_hz);
-      update_param(params, "node_params.use_twist_compensation", p.use_twist_compensation);
+      update_param(params, "update_rate_hz", p.update_rate_hz);
+      update_param(params, "use_twist_compensation", p.use_twist_compensation);
 
       // Copy back to member variable
       node_param_ = p;
@@ -125,7 +124,9 @@ void RadarTracksMsgsConverterNode::onTimer()
   }
 
   TrackedObjects tracked_objects = convertRadarTrackToTrackedObjects(radar_data_);
-  pub_data_->publish(tracked_objects);
+  if (!tracked_objects.objects.empty()) {
+    pub_data_->publish(tracked_objects);
+  }
 }
 
 TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects(
@@ -188,6 +189,7 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects(
 
     tracked_objects.objects.emplace_back(tracked_object);
   }
+  return tracked_objects;
 }
 
 uint8_t RadarTracksMsgsConverterNode::convertClassification(const uint16_t classification)
@@ -216,4 +218,4 @@ uint8_t RadarTracksMsgsConverterNode::convertClassification(const uint16_t class
 
 #include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(radar_tracks_msgs_converter::RadarTracksMsgsConverterNode)
-}
+}  // namespace radar_tracks_msgs_converter
