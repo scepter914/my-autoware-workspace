@@ -1,17 +1,18 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2021 Kenji Miyake
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2022 TIER IV, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "radar_fusion_to_detected_object/radar_fusion_to_detected_object_node.hpp"
 
@@ -47,12 +48,13 @@ bool update_param(
 
 namespace radar_fusion_to_detected_object
 {
-RadarFusionToDetectedObjectNode::RadarFusionToDetectedObjectNode(const rclcpp::NodeOptions & node_options)
+RadarFusionToDetectedObjectNode::RadarFusionToDetectedObjectNode(
+  const rclcpp::NodeOptions & node_options)
 : Node("radar_fusion_to_detected_object", node_options)
 {
   // Parameter Server
-  set_param_res_ =
-    this->add_on_set_parameters_callback(std::bind(&RadarFusionToDetectedObjectNode::onSetParam, this, _1));
+  set_param_res_ = this->add_on_set_parameters_callback(
+    std::bind(&RadarFusionToDetectedObjectNode::onSetParam, this, _1));
 
   // Node Parameter
   node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
@@ -74,7 +76,8 @@ RadarFusionToDetectedObjectNode::RadarFusionToDetectedObjectNode(const rclcpp::N
   // Timer
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
   timer_ = rclcpp::create_timer(
-    this, get_clock(), update_period_ns, std::bind(&RadarFusionToDetectedObjectNode::onTimer, this));
+    this, get_clock(), update_period_ns,
+    std::bind(&RadarFusionToDetectedObjectNode::onTimer, this));
 }
 
 void RadarFusionToDetectedObjectNode::onData(const Int32::ConstSharedPtr msg) { data_ = msg; }
@@ -151,7 +154,7 @@ void RadarFusionToDetectedObjectNode::onTimer()
   // Sample
   pub_data_->publish(example_interfaces::build<Int32>().data(output_.data));
   // pub_data->publish(hoge_msgs);
-  
+
   RCLCPP_INFO(get_logger(), "input, output: %d, %d", input_.data, output_.data);
 }
 
