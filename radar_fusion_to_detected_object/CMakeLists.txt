@@ -17,12 +17,12 @@ find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 ## Targets
-ament_auto_add_library(radar_fusion_to_detected_object_node_component SHARED
-  src/radar_fusion_to_detected_object_node/radar_fusion_to_detected_object.cpp
-  src/radar_fusion_to_detected_object_node/radar_fusion_to_detected_object_node.cpp
+ament_auto_add_library(radar_object_fusion_to_detected_object_node_component SHARED
+  src/radar_fusion_to_detected_object_node/radar_object_fusion_to_detected_object_node.cpp
+  src/radar_fusion_to_detected_object.cpp
 )
 
-rclcpp_components_register_node(radar_fusion_to_detected_object_node_component
+rclcpp_components_register_node(radar_object_fusion_to_detected_object_node_component
   PLUGIN "radar_fusion_to_detected_object::RadarFusionToDetectedObjectNode"
   EXECUTABLE radar_fusion_to_detected_object_node
 )
@@ -38,6 +38,5 @@ endif()
 ## Package
 ament_auto_package(
   INSTALL_TO_SHARE
-    config
     launch
 )
