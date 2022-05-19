@@ -44,7 +44,7 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
 /*
 namespace radar_fusion_to_3dbbox
 {
-void RadarFusionTo3dbbox::setParam(const RadarFusionTo3dbboxParam & param)
+void RadarFusionToDetectedObject::setParam(const RadarFusionToDetectedObjectParam & param)
 {
   // other param
   param_.eps = 0.0001;
@@ -71,7 +71,7 @@ void RadarFusionTo3dbbox::setParam(const RadarFusionTo3dbboxParam & param)
   }
 }
 
-RadarFusionOutput RadarFusionTo3dbbox::update(const RadarFusionInput & input_)
+RadarFusionOutput RadarFusionToDetectedObject::update(const RadarFusionInput & input_)
 {
   RadarFusionOutput output_;
   output_.objects.header = input_.objects.header;
@@ -87,7 +87,7 @@ RadarFusionOutput RadarFusionTo3dbbox::update(const RadarFusionInput & input_)
   return output_;
 }
 
-std::vector<RadarInput> RadarFusionTo3dbbox::filterRadarWithinObject(
+std::vector<RadarInput> RadarFusionToDetectedObject::filterRadarWithinObject(
   const autoware_perception_msgs::DynamicObjectWithFeature & object,
   const std::vector<RadarInput> & radars)
 {
@@ -113,7 +113,7 @@ std::vector<RadarInput> RadarFusionTo3dbbox::filterRadarWithinObject(
   return filtered_radars;
 }
 
-double RadarFusionTo3dbbox::estimateVelocity(std::vector<RadarInput> & radars)
+double RadarFusionToDetectedObject::estimateVelocity(std::vector<RadarInput> & radars)
 {
   double estimated_velocity;
   if (radars.empty()) {
@@ -179,7 +179,7 @@ double RadarFusionTo3dbbox::estimateVelocity(std::vector<RadarInput> & radars)
   return estimated_velocity;
 }
 
-autoware_perception_msgs::DynamicObjectWithFeature RadarFusionTo3dbbox::mergeDoppler(
+autoware_perception_msgs::DynamicObjectWithFeature RadarFusionToDetectedObject::mergeDoppler(
   const autoware_perception_msgs::DynamicObjectWithFeature & object, const double velocity,
   const double yaw)
 {
@@ -192,9 +192,10 @@ autoware_perception_msgs::DynamicObjectWithFeature RadarFusionTo3dbbox::mergeDop
   return output;
 }
 
-autoware_perception_msgs::DynamicObjectWithFeatureArray RadarFusionTo3dbbox::fuseRadarTo3dbbox(
-  const autoware_perception_msgs::DynamicObjectWithFeature & object,
-  std::vector<RadarInput> & radars_within_object)
+autoware_perception_msgs::DynamicObjectWithFeatureArray
+RadarFusionToDetectedObject::fuseRadarTo3dbbox( const
+autoware_perception_msgs::DynamicObjectWithFeature & object, std::vector<RadarInput> &
+radars_within_object)
 {
   autoware_perception_msgs::DynamicObjectWithFeatureArray output_objects;
   double yaw = 0.0;

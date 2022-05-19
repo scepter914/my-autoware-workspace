@@ -24,7 +24,6 @@
 #include <string>
 #include <vector>
 
-/*
 namespace radar_fusion_to_detected_object
 {
 class RadarFusionToDetectedObject
@@ -44,7 +43,18 @@ public:
 
   struct Param
   {
-    int data{};
+    // weight param
+    double velocity_weight_median{};
+    double velocity_weight_average{};
+    double velocity_weight_confidence_average{};
+    double velocity_weight_top_confidence{};
+
+    // other param
+    double eps{};
+    double bounding_box_margin{};
+    double threshold_high_confidence{};
+    double threshold_low_confidence{};
+    bool with_twist_reliable{};
   };
 
   void setParam(const Param & param) { param_ = param; }
@@ -58,31 +68,9 @@ private:
 
 }  // namespace radar_fusion_to_detected_object
 
-#endif  // RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_HPP__
-
 /*
-#include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
-#include <geometry_msgs/PoseWithCovariance.h>
-
-#pragma once
-
 namespace radar_fusion_to_3dbbox
 {
-struct RadarFusionTo3dbboxParam
-{
-  // weight param
-  double velocity_weight_median;
-  double velocity_weight_average;
-  double velocity_weight_confidence_average;
-  double velocity_weight_top_confidence;
-
-  // other param
-  double eps;
-  double bounding_box_margin;
-  double threshold_high_confidence;
-  double threshold_low_confidence;
-  bool with_twist_reliable;
-};
 
 struct RadarInput
 {
@@ -103,14 +91,14 @@ struct RadarFusionOutput
   autoware_perception_msgs::DynamicObjectWithFeatureArray objects;
 };
 
-class RadarFusionTo3dbbox
+class RadarFusionToDetectedObject
 {
 public:
-  void setParam(const RadarFusionTo3dbboxParam & param);
+  void setParam(const RadarFusionToDetectedObjectParam & param);
   RadarFusionOutput update(const RadarFusionInput & input_);
 
 private:
-  RadarFusionTo3dbboxParam param_;
+  RadarFusionToDetectedObjectParam param_;
   std::vector<RadarInput> filterRadarWithinObject(
     const autoware_perception_msgs::DynamicObjectWithFeature & object,
     const std::vector<RadarInput> & radars);
