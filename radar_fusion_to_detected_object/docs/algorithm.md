@@ -19,7 +19,7 @@ Attach object to twist information of estimated twist.
 
 ![estimate_doppler_velocity](radar_fusion_to_detected_object_2.drawio.svg)
 
-### 3. [Feature support] [Option] Convert doppler velocity to twist
+### 4. [Feature support] [Option] Convert doppler velocity to twist
 
 If the twist information of radars is doppler velocity, convert from doppler velocity to twist using yaw angle of DetectedObject.
 Because radar pointcloud has only doppler velocity information, radar pointcloud fusion should use this feature.
@@ -27,7 +27,7 @@ On the other hand, because radar objects have twist information, radar object fu
 
 ![process_high_confidence](radar_fusion_to_detected_object_3.drawio.svg)
 
-### 4. Delete objects with low probability.
+### 5. Delete objects with low probability.
 
 - Delete low confidence objects that do not have some radar points/objects.
 
