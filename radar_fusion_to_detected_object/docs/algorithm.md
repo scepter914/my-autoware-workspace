@@ -6,7 +6,7 @@ Choose radar pointcloud/objects within 3d bounding box from lidar-base detection
 
 ![choose_radar](radar_fusion_to_detected_object_1.drawio.svg)
 
-### 2. (TBD) Split the object going in a different direction
+### 2. [Feature support] Split the object going in a different direction
 
 - Split two object for the low confidence object that can be estimated to derive two object.
 
@@ -19,10 +19,11 @@ Attach object to twist information of estimated twist.
 
 ![estimate_doppler_velocity](radar_fusion_to_detected_object_2.drawio.svg)
 
+### 3. [Feature support] [Option] Convert doppler velocity to twist
 
-### 3. [Option] Convert doppler velocity to twist
-
-(TBD) If the twist information of radars is doppler velocity, convert from doppler velocity to twist using yaw angle of DetectedObject.
+If the twist information of radars is doppler velocity, convert from doppler velocity to twist using yaw angle of DetectedObject.
+Because radar pointcloud has only doppler velocity information, radar pointcloud fusion should use this feature.
+On the other hand, because radar objects have twist information, radar object fusion should not use this feature.
 
 ![process_high_confidence](radar_fusion_to_detected_object_3.drawio.svg)
 
