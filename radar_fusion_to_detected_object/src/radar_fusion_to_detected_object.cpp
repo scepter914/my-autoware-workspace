@@ -50,24 +50,24 @@ void RadarFusionToDetectedObject::setParam(const RadarFusionToDetectedObjectPara
   param_.eps = 0.0001;
   param_.with_twist_reliable = param.with_twist_reliable;
   param_.bounding_box_margin = param.bounding_box_margin;
-  param_.threshold_high_confidence = param.threshold_high_confidence;
-  param_.threshold_low_confidence = param.threshold_low_confidence;
+  param_.threshold_high_target_value = param.threshold_high_target_value;
+  param_.threshold_low_target_value = param.threshold_low_target_value;
 
   // normalize weight param
   double sum_weight = param.velocity_weight_median + param.velocity_weight_average +
-                      param.velocity_weight_confidence_average +
-                      param.velocity_weight_top_confidence;
+                      param.velocity_weight_target_value_average +
+                      param.velocity_weight_top_target_value;
   if (sum_weight < param_.eps) {
     param_.velocity_weight_median = 1.0;
     param_.velocity_weight_average = 0.0;
-    param_.velocity_weight_confidence_average = 0.0;
-    param_.velocity_weight_top_confidence = 0.0;
+    param_.velocity_weight_target_value_average = 0.0;
+    param_.velocity_weight_top_target_value = 0.0;
   } else {
     param_.velocity_weight_median = param.velocity_weight_median / sum_weight;
     param_.velocity_weight_average = param.velocity_weight_average / sum_weight;
-    param_.velocity_weight_confidence_average =
-      param.velocity_weight_confidence_average / sum_weight;
-    param_.velocity_weight_top_confidence = param.velocity_weight_top_confidence / sum_weight;
+    param_.velocity_weight_target_value_average =
+      param.velocity_weight_target_value_average / sum_weight;
+    param_.velocity_weight_top_target_value = param.velocity_weight_top_target_value / sum_weight;
   }
 }
 
@@ -146,35 +146,34 @@ double RadarFusionToDetectedObject::estimateVelocity(std::vector<RadarInput> & r
       std::accumulate(std::begin(radars), std::end(radars), 0.0, add_v_func) / radars.size();
   }
 
-  // calculate top confidence
-  double doppler_top_confidence = 0.0;
-  if (param_.velocity_weight_top_confidence > param_.eps) {
+  // calculate top target_value
+  double doppler_top_target_value = 0.0;
+  if (param_.velocity_weight_top_target_value > param_.eps) {
     auto comp_func = [](const RadarInput & a, const RadarInput & b) {
-      return a.confidence < b.confidence;
+      return a.target_value < b.target_value;
     };
     auto iter = std::max_element(std::begin(radars), std::end(radars), comp_func);
-    doppler_top_confidence = iter->confidence;
+    doppler_top_target_value = iter->target_value;
   }
 
-  // calculate confidence * average
-  double doppler_confidence_average = 0.0;
-  if (param_.velocity_weight_confidence_average > param_.eps) {
-    auto add_confidence_func = [](const double & a, RadarInput & b) { return a + b.confidence; };
-    double sum_confidence =
-      std::accumulate(std::begin(radars), std::end(radars), 0.0, add_confidence_func);
-    auto add_confidence_vel_func = [](const double & a, RadarInput & b) {
-      return a + b.confidence * b.doppler_velocity;
+  // calculate target_value * average
+  double doppler_target_value_average = 0.0;
+  if (param_.velocity_weight_target_value_average > param_.eps) {
+    auto add_target_value_func = [](const double & a, RadarInput & b) { return a + b.target_value;
+}; double sum_target_value = std::accumulate(std::begin(radars), std::end(radars), 0.0,
+add_target_value_func); auto add_target_value_vel_func = [](const double & a, RadarInput & b) {
+      return a + b.target_value * b.doppler_velocity;
     };
-    doppler_confidence_average =
-      std::accumulate(std::begin(radars), std::end(radars), 0.0, add_confidence_vel_func) /
-      sum_confidence;
+    doppler_target_value_average =
+      std::accumulate(std::begin(radars), std::end(radars), 0.0, add_target_value_vel_func) /
+      sum_target_value;
   }
 
   // estimate doppler velocity with cost weight
   estimated_velocity = param_.velocity_weight_median * doppler_median +
                        param_.velocity_weight_average * doppler_average +
-                       param_.velocity_weight_confidence_average * doppler_confidence_average +
-                       param_.velocity_weight_top_confidence * doppler_top_confidence;
+                       param_.velocity_weight_target_value_average * doppler_target_value_average +
+                       param_.velocity_weight_top_target_value * doppler_top_target_value;
 
   return estimated_velocity;
 }
@@ -204,9 +203,9 @@ radars_within_object)
     "ob_x: %f, vel: %f [m/s], yaw: %f [rad], Radar's size: %d",
     object.object.state.pose_covariance.pose.position.x, velocity, yaw,
     int(radars_within_object.size()));
-  if (object.object.semantic.confidence > param_.threshold_high_confidence) {
+  if (object.object.semantic.target_value > param_.threshold_high_target_value) {
     output_objects.feature_objects.emplace_back(mergeDoppler(object, velocity, yaw));
-  } else if (object.object.semantic.confidence > param_.threshold_low_confidence) {
+  } else if (object.object.semantic.target_value > param_.threshold_low_target_value) {
     //  TODO split_object
     // ob_1 = , vel_1 =
     // ob_2 = , vel_2 =
@@ -223,11 +222,11 @@ if (!radars_within_object.empty()) {
 } else {
   // for debug
   auto object_debug = mergeDoppler(object, velocity, yaw);
-  object_debug.object.semantic.confidence = 0.1;
+  object_debug.object.semantic.target_value = 0.1;
   output_objects.feature_objects.emplace_back(object_debug);
 }
 }
-// if (3d bbox is low confidence && not radar point in 3d bbox) then no-detection
+// if (3d bbox is low target_value && not radar point in 3d bbox) then no-detection
 // output is empty
 return output_objects;
 }

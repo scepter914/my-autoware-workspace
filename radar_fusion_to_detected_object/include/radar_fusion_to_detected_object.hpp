@@ -17,8 +17,12 @@
 #ifndef RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_HPP__
 #define RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_HPP__
 
-#include "radar_fusion_to_detected_object.hpp"
 #include "rclcpp/logger.hpp"
+
+#include "autoware_auto_perception_msgs/msg/detected_objects.hpp"
+#include "geometry_msgs/msg/pose_with_covariance.hpp"
+#include "geometry_msgs/msg/twist_with_covariance.hpp"
+#include "std_msgs/msg/header.hpp"
 
 #include <memory>
 #include <string>
@@ -26,82 +30,69 @@
 
 namespace radar_fusion_to_detected_object
 {
+using autoware_auto_perception_msgs::msg::DetectedObjects;
+using geometry_msgs::msg::PoseWithCovariance;
+using geometry_msgs::msg::TwistWithCovariance;
+
 class RadarFusionToDetectedObject
+
 {
 public:
   explicit RadarFusionToDetectedObject(const rclcpp::Logger & logger) : logger_(logger) {}
-
-  struct Input
-  {
-    int data{};
-  };
-
-  struct Output
-  {
-    int data{};
-  };
 
   struct Param
   {
     // weight param
     double velocity_weight_median{};
     double velocity_weight_average{};
-    double velocity_weight_confidence_average{};
-    double velocity_weight_top_confidence{};
+    double velocity_weight_target_value_average{};
+    double velocity_weight_top_target_value{};
 
     // other param
     double eps{};
     double bounding_box_margin{};
-    double threshold_high_confidence{};
-    double threshold_low_confidence{};
+    double threshold_high_target_value{};
+    double threshold_low_target_value{};
     bool with_twist_reliable{};
   };
 
-  void setParam(const Param & param) { param_ = param; }
+  struct RadarInput
+  {
+    std_msgs::msg::Header header;
+    PoseWithCovariance pose_with_covariance;
+    TwistWithCovariance twist_with_covariance;
+    double target_value;
+  };
 
+  struct Input
+  {
+    std::vector<RadarInput> radars;
+    DetectedObjects objects;
+  };
+
+  struct Output
+  {
+    DetectedObjects objects;
+  };
+
+  void setParam(const Param & param) { param_ = param; }
   Output update(const Input & input);
 
 private:
   rclcpp::Logger logger_;
   Param param_{};
+  std::vector<RadarInput> filterRadarWithinObject(
+    const autoware_perception_msgs::DynamicObjectWithFeature & object,
+    const std::vector<RadarInput> & radars);
 };
 
 }  // namespace radar_fusion_to_detected_object
 
 /*
-namespace radar_fusion_to_3dbbox
-{
-
-struct RadarInput
-{
-  geometry_msgs::Pose pose;
-  double doppler_velocity;
-  double confidence;
-  std_msgs::Header header;
-};
-
-struct RadarFusionInput
-{
-  std::vector<RadarInput> radars;
-  autoware_perception_msgs::DynamicObjectWithFeatureArray objects;
-};
-
-struct RadarFusionOutput
-{
-  autoware_perception_msgs::DynamicObjectWithFeatureArray objects;
-};
 
 class RadarFusionToDetectedObject
 {
-public:
-  void setParam(const RadarFusionToDetectedObjectParam & param);
-  RadarFusionOutput update(const RadarFusionInput & input_);
-
 private:
-  RadarFusionToDetectedObjectParam param_;
-  std::vector<RadarInput> filterRadarWithinObject(
-    const autoware_perception_msgs::DynamicObjectWithFeature & object,
-    const std::vector<RadarInput> & radars);
   double estimateVelocity(std::vector<RadarInput> & radars);
   autoware_perception_msgs::DynamicObjectWithFeature mergeDoppler(
     const autoware_perception_msgs::DynamicObjectWithFeature & object, const double velocity,
@@ -111,7 +102,7 @@ private:
     std::vector<RadarInput> & radars);
 };
 
-}  // namespace radar_fusion_to_3dbbox
+}  // namespace radar_fusion_to_detected_object
 */
 
 #endif  // RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_HPP__
