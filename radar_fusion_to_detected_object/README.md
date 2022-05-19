@@ -17,7 +17,7 @@ Sensor fusion with radar objects and a detected object.
 ### How to launch
 
 ```sh
-roslaunch radar_fusion_to_3dbbox radar_object_to_3dbbox.launch
+roslaunch radar_fusion_to_detected_object radar_object_to_detected_object.launch
 ```
 
 ### Input / Output
