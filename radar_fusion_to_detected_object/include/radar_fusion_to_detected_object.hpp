@@ -30,30 +30,31 @@
 
 namespace radar_fusion_to_detected_object
 {
+using autoware_auto_perception_msgs::msg::DetectedObject;
 using autoware_auto_perception_msgs::msg::DetectedObjects;
 using geometry_msgs::msg::PoseWithCovariance;
 using geometry_msgs::msg::TwistWithCovariance;
 
 class RadarFusionToDetectedObject
-
 {
 public:
   explicit RadarFusionToDetectedObject(const rclcpp::Logger & logger) : logger_(logger) {}
 
   struct Param
   {
-    // weight param
+    // Radar fusion param
+    double bounding_box_margin{};
+    double split_threshold_velocity{};
+
+    // Weight param for velocity estimation
     double velocity_weight_median{};
     double velocity_weight_average{};
     double velocity_weight_target_value_average{};
     double velocity_weight_top_target_value{};
 
-    // other param
-    double eps{};
-    double bounding_box_margin{};
-    double threshold_high_target_value{};
-    double threshold_low_target_value{};
-    bool with_twist_reliable{};
+    // Parameters for fixing object information
+    bool convert_doppler_to_twist{};
+    double threshold_probability{};
   };
 
   struct RadarInput
@@ -75,34 +76,21 @@ public:
     DetectedObjects objects;
   };
 
-  void setParam(const Param & param) { param_ = param; }
+  void setParam(const Param & param);
   Output update(const Input & input);
 
 private:
   rclcpp::Logger logger_;
   Param param_{};
   std::vector<RadarInput> filterRadarWithinObject(
-    const autoware_perception_msgs::DynamicObjectWithFeature & object,
-    const std::vector<RadarInput> & radars);
+    const DetectedObject & object, const std::vector<RadarInput> & radars);
+  std::vector<DetectedObject> splitObject(
+    const DetectedObject & object, const std::vector<RadarInput> & radars);
+  TwistWithCovariance estimateTwist(
+    const DetectedObject & object, std::vector<RadarInput> & radars);
+  bool isQualified(const DetectedObject & object);
 };
 
 }  // namespace radar_fusion_to_detected_object
-
-/*
-
-class RadarFusionToDetectedObject
-{
-private:
-  double estimateVelocity(std::vector<RadarInput> & radars);
-  autoware_perception_msgs::DynamicObjectWithFeature mergeDoppler(
-    const autoware_perception_msgs::DynamicObjectWithFeature & object, const double velocity,
-    const double yaw);
-  autoware_perception_msgs::DynamicObjectWithFeatureArray fuseRadarTo3dbbox(
-    const autoware_perception_msgs::DynamicObjectWithFeature & object,
-    std::vector<RadarInput> & radars);
-};
-
-}  // namespace radar_fusion_to_detected_object
-*/
 
 #endif  // RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_HPP__

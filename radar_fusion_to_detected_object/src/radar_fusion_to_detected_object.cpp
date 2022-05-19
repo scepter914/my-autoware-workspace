@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-#include <autoware_radar_utils/autoware_radar_utils.hpp>
-#include <radar_fusion_to_3dbbox.hpp>
+#include "radar_fusion_to_detected_object.hpp"
+
+#include "autoware_utils/geometry/boost_geometry.h"
+#include "autoware_utils/geometry/geometry.h"
 
 #include <boost/geometry.hpp>
-
-#include <autoware_utils/geometry/boost_geometry.h>
-#include <autoware_utils/geometry/geometry.h>
 
 #include <algorithm>
 #include <iostream>
@@ -28,36 +27,22 @@
 
 namespace radar_fusion_to_detected_object
 {
-RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
-  const RadarFusionToDetectedObject::Input & input)
-{
-  RadarFusionToDetectedObject::Output output;
+using autoware_auto_perception_msgs::msg::DetectedObject;
+using autoware_auto_perception_msgs::msg::DetectedObjects;
+using geometry_msgs::msg::PoseWithCovariance;
+using geometry_msgs::msg::TwistWithCovariance;
 
-  // Sample
-  output.data = input.data + param_.data;
-
-  return output;
-}
-
-}  // namespace radar_fusion_to_detected_object
-
-/*
-namespace radar_fusion_to_3dbbox
-{
 void RadarFusionToDetectedObject::setParam(const RadarFusionToDetectedObjectParam & param)
 {
-  // other param
-  param_.eps = 0.0001;
-  param_.with_twist_reliable = param.with_twist_reliable;
+  // Radar fusion param
   param_.bounding_box_margin = param.bounding_box_margin;
-  param_.threshold_high_target_value = param.threshold_high_target_value;
-  param_.threshold_low_target_value = param.threshold_low_target_value;
+  param_.split_threshold_velocity = param.split_threshold_velocity;
 
   // normalize weight param
   double sum_weight = param.velocity_weight_median + param.velocity_weight_average +
                       param.velocity_weight_target_value_average +
                       param.velocity_weight_top_target_value;
-  if (sum_weight < param_.eps) {
+  if (sum_weight < 0.01) {
     param_.velocity_weight_median = 1.0;
     param_.velocity_weight_average = 0.0;
     param_.velocity_weight_target_value_average = 0.0;
@@ -69,23 +54,65 @@ void RadarFusionToDetectedObject::setParam(const RadarFusionToDetectedObjectPara
       param.velocity_weight_target_value_average / sum_weight;
     param_.velocity_weight_top_target_value = param.velocity_weight_top_target_value / sum_weight;
   }
+
+  // Parameters for fixing object information
+  param_.threshold_probability = param.threshold_probability;
+  param_.convert_doppler_to_twist = param.convert_doppler_to_twist;
 }
 
-RadarFusionOutput RadarFusionToDetectedObject::update(const RadarFusionInput & input_)
+RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
+  const RadarFusionToDetectedObject::Input & input)
 {
-  RadarFusionOutput output_;
+  RadarFusionToDetectedObject::Output output;
   output_.objects.header = input_.objects.header;
-  for (const auto & ob : input_.objects.feature_objects) {
-    std::vector<RadarInput> radar_within_objects = filterRadarWithinObject(ob, input_.radars);
-    auto object_with_doppler = fuseRadarTo3dbbox(ob, radar_within_objects);
-    if (!object_with_doppler.feature_objects.empty()) {
-      for (const auto & ob_d : object_with_doppler.feature_objects) {
-        output_.objects.feature_objects.emplace_back(ob_d);
+
+  for (const auto & object : input_.objects.objects) {
+    // Link between 3d bounding box and radar data
+    std::vector<RadarInput> radars_within_object = filterRadarWithinObject(object, input_.radars);
+
+    // Split the object going in a different direction
+    std::vector<DetectedObject> split_objects = splitObject(object, radars_within_object);
+
+    for (auto & split_object : split_objects) {
+      std::vector<RadarInput> radars_within_split_object;
+      if (split_objects.size() == 1) {
+        // If object is not split, radar data within object is same
+        radars_within_split_object = radars_within_object;
+      } else {
+        // If object is split, then filter radar again
+        radars_within_split_object = filterRadarWithinObject(object, radars_within_object);
+      }
+
+      // Estimate twist of object
+      split_object.kinematics.has_twist = true;
+      split_object.kinematics.twist_with_covariance =
+        estimateTwist(split_object, radars_within_split_object);
+
+      // Delete objects with low probability
+      if (isQualified(split_object)) {
+        output_.objects.objects.emplaced_back(split_object);
       }
     }
   }
-  return output_;
+  return output;
 }
+
+bool RadarFusionToDetectedObject::isQualified(const DetectedObject & object)
+{
+  if (split_object.classification[0].probability > param_.threshold_probability) {
+    return true;
+  } else {
+    if (!radars_within_object.empty()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+}
+
+}  // namespace radar_fusion_to_detected_object
+
+/*
 
 std::vector<RadarInput> RadarFusionToDetectedObject::filterRadarWithinObject(
   const autoware_perception_msgs::DynamicObjectWithFeature & object,
@@ -140,7 +167,7 @@ double RadarFusionToDetectedObject::estimateVelocity(std::vector<RadarInput> & r
 
   // calculate average
   double doppler_average = 0.0;
-  if (param_.velocity_weight_average > param_.eps) {
+  if (param_.velocity_weight_average > 0.0) {
     auto add_v_func = [](const double & a, RadarInput & b) { return a + b.doppler_velocity; };
     doppler_average =
       std::accumulate(std::begin(radars), std::end(radars), 0.0, add_v_func) / radars.size();
@@ -148,7 +175,7 @@ double RadarFusionToDetectedObject::estimateVelocity(std::vector<RadarInput> & r
 
   // calculate top target_value
   double doppler_top_target_value = 0.0;
-  if (param_.velocity_weight_top_target_value > param_.eps) {
+  if (param_.velocity_weight_top_target_value > 0.0) {
     auto comp_func = [](const RadarInput & a, const RadarInput & b) {
       return a.target_value < b.target_value;
     };
@@ -158,7 +185,7 @@ double RadarFusionToDetectedObject::estimateVelocity(std::vector<RadarInput> & r
 
   // calculate target_value * average
   double doppler_target_value_average = 0.0;
-  if (param_.velocity_weight_target_value_average > param_.eps) {
+  if (param_.velocity_weight_target_value_average > 0.0) {
     auto add_target_value_func = [](const double & a, RadarInput & b) { return a + b.target_value;
 }; double sum_target_value = std::accumulate(std::begin(radars), std::end(radars), 0.0,
 add_target_value_func); auto add_target_value_vel_func = [](const double & a, RadarInput & b) {
@@ -172,9 +199,13 @@ add_target_value_func); auto add_target_value_vel_func = [](const double & a, Ra
   // estimate doppler velocity with cost weight
   estimated_velocity = param_.velocity_weight_median * doppler_median +
                        param_.velocity_weight_average * doppler_average +
-                       param_.velocity_weight_target_value_average * doppler_target_value_average +
-                       param_.velocity_weight_top_target_value * doppler_top_target_value;
+                       param_.velocity_weight_target_value_average * doppler_target_value_average
++ param_.velocity_weight_top_target_value * doppler_top_target_value;
 
+  // Convert doppler velocity to twist
+  if (param_.convert_doppler_to_twist) {
+     twist_with_covariance = convertDopplerToTwist(output_object, twist_with_covariance)
+  }
   return estimated_velocity;
 }
 
@@ -196,26 +227,7 @@ RadarFusionToDetectedObject::fuseRadarTo3dbbox( const
 autoware_perception_msgs::DynamicObjectWithFeature & object, std::vector<RadarInput> &
 radars_within_object)
 {
-  autoware_perception_msgs::DynamicObjectWithFeatureArray output_objects;
-  double yaw = 0.0;
-  double velocity = estimateVelocity(radars_within_object);
-  ROS_DEBUG(
-    "ob_x: %f, vel: %f [m/s], yaw: %f [rad], Radar's size: %d",
-    object.object.state.pose_covariance.pose.position.x, velocity, yaw,
-    int(radars_within_object.size()));
-  if (object.object.semantic.target_value > param_.threshold_high_target_value) {
-    output_objects.feature_objects.emplace_back(mergeDoppler(object, velocity, yaw));
-  } else if (object.object.semantic.target_value > param_.threshold_low_target_value) {
-    //  TODO split_object
-    // ob_1 = , vel_1 =
-    // ob_2 = , vel_2 =
-    // if (distance(ob_1.pose.position, ob_2.pose.position) > thres && std::abs(vel_1 - vel_2) >
-thres
-    // ){ output.append(mergeDoppler(ob_1, vel_1, yaw)); output.append(mergeDoppler(ob_2, vel_2,
-yaw));
-    //   return output;
-    // } else if (!radars_within_object.empty()) {
-    // }
+
 
 if (!radars_within_object.empty()) {
   output_objects.feature_objects.emplace_back(mergeDoppler(object, velocity, yaw));
