@@ -6,6 +6,8 @@ Main feature of this package are as following.
 - Attach velocity to lidar detection result from radar data to improve for tracking result and planning like adaptive cruise.
 - Improve detection result with radar sensor information. If both lidar 3d detected objects with low score and high confidence of radar pointcloud / objects, then improve score of objects.
 
+![process_low_confidence](docs/radar_fusion_to_detected_object_6.drawio.svg)
+
 The document of core algorithm is [here](docs/algorithm.md)
 
 ## radar_object_fusion_to_detected_object

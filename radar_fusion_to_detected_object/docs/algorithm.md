@@ -28,5 +28,3 @@ Attach object to twist information of estimated twist.
 - Delete low confidence objects that do not have some radar points/objects.
 
 ![process_low_confidence](radar_fusion_to_detected_object_5.drawio.svg)
-
-![process_low_confidence](radar_fusion_to_detected_object_6.drawio.svg)
