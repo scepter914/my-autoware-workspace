@@ -2,28 +2,31 @@
 ## Common Algorithm
 ### 1. Link between 3d bounding box and radar data
 
-Choose radar pointcloud/object within 3d bounding box from lidar-base detection with margin space from bird eye view.
+Choose radar pointcloud/objects within 3d bounding box from lidar-base detection with margin space from bird eye view.
 
-![choose_radar](docs/radar_fusion_to_3dbbox_1.drawio.svg)
+![choose_radar](radar_fusion_to_detected_object_1.drawio.svg)
 
-### 2. Estimate velocity of object.
+### 2. Estimate twist of object
 
-![estimate_doppler_velocity](docs/radar_fusion_to_3dbbox_2.drawio.svg)
+Estimate twist from choosed radar pointcloud/objects.
+Attach object to twist information of estimated twist.
 
-3. Attach object to twist information.
+![estimate_doppler_velocity](radar_fusion_to_detected_object_2.drawio.svg)
 
-![process_high_confidence](docs/radar_fusion_to_3dbbox_3.drawio.svg)
+### 3. [Option] Convert doppler velocity to twist
 
-4. If velocity information has doppler velocity, convert from doppler velocity to twist using yaw angle of 3d detected object.
+If the twist information of radars is doppler velocity, convert from doppler velocity to twist using yaw angle of DetectedObject.
 
-![process_low_confidence](docs/radar_fusion_to_3dbbox_4.drawio.svg)
+![process_high_confidence](radar_fusion_to_detected_object_3.drawio.svg)
 
-5. If object confidence of lidar-based detection is low,
-    5.1. and if an object estimate to derive two object, split two object
-    5.2. and if there are some radar point/object within 3d bounding box from lidar-base detection, attach object to twist information.
-    5.3. and if there are not any radar point/object within 3d bounding box from lidar-base detection, delete the object.
+### 4. If an object confidence of lidar-based detection is low, fix the object.
 
+- Split two object for the low confidence object that can be estimated to derive two object.
 
-![process_low_confidence](docs/radar_fusion_to_3dbbox_5.drawio.svg)
+![process_low_confidence](radar_fusion_to_detected_object_4.drawio.svg)
 
-![process_low_confidence](docs/radar_fusion_to_3dbbox_6.drawio.svg)
+- Delete low confidence objects that do not have some radar points/objects.
+
+![process_low_confidence](radar_fusion_to_detected_object_5.drawio.svg)
+
+![process_low_confidence](radar_fusion_to_detected_object_6.drawio.svg)
