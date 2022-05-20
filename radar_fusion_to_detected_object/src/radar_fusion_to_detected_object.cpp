@@ -221,28 +221,4 @@ autoware_perception_msgs::DynamicObjectWithFeature RadarFusionToDetectedObject::
 
   return output;
 }
-
-autoware_perception_msgs::DynamicObjectWithFeatureArray
-RadarFusionToDetectedObject::fuseRadarTo3dbbox( const
-autoware_perception_msgs::DynamicObjectWithFeature & object, std::vector<RadarInput> &
-radars_within_object)
-{
-
-
-if (!radars_within_object.empty()) {
-  output_objects.feature_objects.emplace_back(mergeDoppler(object, velocity, yaw));
-} else {
-  // for debug
-  auto object_debug = mergeDoppler(object, velocity, yaw);
-  object_debug.object.semantic.target_value = 0.1;
-  output_objects.feature_objects.emplace_back(object_debug);
-}
-}
-// if (3d bbox is low target_value && not radar point in 3d bbox) then no-detection
-// output is empty
-return output_objects;
-}
-
-}  // namespace radar_fusion_to_3dbbox
-
 */
