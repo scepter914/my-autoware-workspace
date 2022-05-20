@@ -89,7 +89,7 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
         estimateTwist(split_object, radars_within_split_object);
 
       // Delete objects with low probability
-      if (isQualified(split_object)) {
+      if (isQualified(split_object, radars_within_split_object)) {
         output.objects.objects.emplace_back(split_object);
       }
     }
@@ -106,21 +106,26 @@ RadarFusionToDetectedObject::filterRadarWithinObject(
 std::vector<DetectedObject> RadarFusionToDetectedObject::splitObject(
   const DetectedObject & object, const std::vector<RadarInput> & radars)
 {
+  // [TODO] Implementation
+  std::vector<DetectedObject> output;
+  output.emplace_back(object);
+  return output;
 }
 
 TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
   const DetectedObject & object, std::vector<RadarInput> & radars)
 {
-  TwistWithCovariance twist{};
+  TwistWithCovariance twist_with_covariance{};
 
   if (radars.empty()) {
-    return twist;
+    return twist_with_covariance;
   }
 
   // calculate median
   Twist twist_median{};
-  auto ascending_func = [](const RadarInput & a, const RadarInput & b) {
-    return a.twist_with_covariance.twist < a.twist_with_covariance.twist;
+  auto ascending_func = [&](const RadarInput & a, const RadarInput & b) {
+    return getTwistNorm(a.twist_with_covariance.twist) <
+           getTwistNorm(b.twist_with_covariance.twist);
   };
   std::sort(radars.begin(), radars.end(), ascending_func);
 
@@ -176,17 +181,18 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
 
   // Convert doppler velocity to twist
   if (param_.convert_doppler_to_twist) {
-    twist_with_covariance = convertDopplerToTwist(output_object, twist_with_covariance)
+    twist_with_covariance = convertDopplerToTwist(object, twist_with_covariance);
   }
-  return estimated_velocity;
+  return twist_with_covariance;
 }
 
-bool RadarFusionToDetectedObject::isQualified(const DetectedObject & object)
+bool RadarFusionToDetectedObject::isQualified(
+  const DetectedObject & object, const std::vector<RadarInput> & radars)
 {
-  if (split_object.classification[0].probability > param_.threshold_probability) {
+  if (object.classification[0].probability > param_.threshold_probability) {
     return true;
   } else {
-    if (!radars_within_object.empty()) {
+    if (!radars.empty()) {
       return true;
     } else {
       return false;
@@ -195,13 +201,13 @@ bool RadarFusionToDetectedObject::isQualified(const DetectedObject & object)
 }
 
 TwistWithCovariance RadarFusionToDetectedObject::convertDopplerToTwist(
-  DetectedObject & object, TwistWithCovariance & twist_with_covariance)
+  const DetectedObject & object, const TwistWithCovariance & twist_with_covariance)
 {
   // [TODO] implement for radar pointcloud fusion
   return twist_with_covariance;
 }
 
-Twist RadarFusionToDetectedObject::addTwist(Twist & twist_1, Twist & twist_2)
+Twist RadarFusionToDetectedObject::addTwist(const Twist & twist_1, const Twist & twist_2)
 {
   Twist output{};
   output.linear.x = twist_1.linear.x + twist_2.linear.x;
@@ -213,7 +219,7 @@ Twist RadarFusionToDetectedObject::addTwist(Twist & twist_1, Twist & twist_2)
   return output;
 }
 
-Twist RadarFusionToDetectedObject::scaleTwist(Twist & twist, double scale)
+Twist RadarFusionToDetectedObject::scaleTwist(const Twist & twist, const double scale)
 {
   Twist output{};
   output.linear.x = twist.linear.x * scale;
@@ -224,6 +230,13 @@ Twist RadarFusionToDetectedObject::scaleTwist(Twist & twist, double scale)
   output.angular.z = twist.angular.z * scale;
   return output;
 }
+
+double RadarFusionToDetectedObject::getTwistNorm(const Twist & twist)
+{
+  return twist.linear.x * twist.linear.x + twist.linear.y * twist.linear.y +
+         twist.linear.z * twist.linear.z;
+}
+
 }  // namespace radar_fusion_to_detected_object
 
 /*
