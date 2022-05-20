@@ -33,6 +33,7 @@ namespace radar_fusion_to_detected_object
 using autoware_auto_perception_msgs::msg::DetectedObject;
 using autoware_auto_perception_msgs::msg::DetectedObjects;
 using geometry_msgs::msg::PoseWithCovariance;
+using geometry_msgs::msg::Twist;
 using geometry_msgs::msg::TwistWithCovariance;
 
 class RadarFusionToDetectedObject
@@ -89,7 +90,11 @@ private:
   TwistWithCovariance estimateTwist(
     const DetectedObject & object, std::vector<RadarInput> & radars);
   bool isQualified(const DetectedObject & object);
-};
+  TwistWithCovariance convertDopplerToTwist(
+    DetectedObject & object, TwistWithCovariance & twist_with_covariance);
+  Twist addTwist(Twist & twist_1, Twist & twist_2);
+  Twist scaleTwist(Twist & twist, double scale);
+  Twist scaleTwist(Twist & twist, double scale);
 
 }  // namespace radar_fusion_to_detected_object
 

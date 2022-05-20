@@ -16,8 +16,8 @@
 
 #include "radar_fusion_to_detected_object.hpp"
 
-#include "autoware_utils/geometry/boost_geometry.h"
-#include "autoware_utils/geometry/geometry.h"
+// #include "autoware_utils/geometry/boost_geometry.h"
+// #include "autoware_utils/geometry/geometry.h"
 
 #include <boost/geometry.hpp>
 
@@ -32,7 +32,7 @@ using autoware_auto_perception_msgs::msg::DetectedObjects;
 using geometry_msgs::msg::PoseWithCovariance;
 using geometry_msgs::msg::TwistWithCovariance;
 
-void RadarFusionToDetectedObject::setParam(const RadarFusionToDetectedObjectParam & param)
+void RadarFusionToDetectedObject::setParam(const Param & param)
 {
   // Radar fusion param
   param_.bounding_box_margin = param.bounding_box_margin;
@@ -64,11 +64,11 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
   const RadarFusionToDetectedObject::Input & input)
 {
   RadarFusionToDetectedObject::Output output;
-  output_.objects.header = input_.objects.header;
+  output.objects.header = input.objects.header;
 
-  for (const auto & object : input_.objects.objects) {
+  for (const auto & object : input.objects.objects) {
     // Link between 3d bounding box and radar data
-    std::vector<RadarInput> radars_within_object = filterRadarWithinObject(object, input_.radars);
+    std::vector<RadarInput> radars_within_object = filterRadarWithinObject(object, input.radars);
 
     // Split the object going in a different direction
     std::vector<DetectedObject> split_objects = splitObject(object, radars_within_object);
@@ -90,68 +90,37 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
 
       // Delete objects with low probability
       if (isQualified(split_object)) {
-        output_.objects.objects.emplaced_back(split_object);
+        output.objects.objects.emplace_back(split_object);
       }
     }
   }
   return output;
 }
 
-bool RadarFusionToDetectedObject::isQualified(const DetectedObject & object)
+std::vector<RadarFusionToDetectedObject::RadarInput>
+RadarFusionToDetectedObject::filterRadarWithinObject(
+  const DetectedObject & object, const std::vector<RadarInput> & radars)
 {
-  if (split_object.classification[0].probability > param_.threshold_probability) {
-    return true;
-  } else {
-    if (!radars_within_object.empty()) {
-      return true;
-    } else {
-      return false;
-    }
-  }
 }
 
-}  // namespace radar_fusion_to_detected_object
-
-/*
-
-std::vector<RadarInput> RadarFusionToDetectedObject::filterRadarWithinObject(
-  const autoware_perception_msgs::DynamicObjectWithFeature & object,
-  const std::vector<RadarInput> & radars)
+std::vector<DetectedObject> RadarFusionToDetectedObject::splitObject(
+  const DetectedObject & object, const std::vector<RadarInput> & radars)
 {
-  std::vector<RadarInput> filtered_radars;
-  autoware_utils::Point2d object_size{
-    object.object.shape.dimensions.x, object.object.shape.dimensions.y};
-  autoware_utils::LinearRing2d object_box =
-    autoware_utils::createObject2d(object_size, param_.bounding_box_margin);
-  object_box = autoware_utils::transformVector(
-    object_box, autoware_utils::pose2transform(object.object.state.pose_covariance.pose));
-  ROS_DEBUG(
-    "object box 0 x: %f, y: %f, object box 1 x: %f, y: %f", object_box.at(0).x(),
-    object_box.at(0).y(), object_box.at(1).x(), object_box.at(1).y());
-  for (const auto & ra : radars) {
-    autoware_utils::Point2d radar_point{ra.pose.position.x, ra.pose.position.y};
-    if (boost::geometry::within(radar_point, object_box)) {
-      filtered_radars.push_back(ra);
-    }
-  }
-  // remove the radar data whose frame_id is lower than the most
-  // [TODO] frame id filter
-  // std::string frame_id = radars.at(0).header.frame_id;
-  return filtered_radars;
 }
 
-double RadarFusionToDetectedObject::estimateVelocity(std::vector<RadarInput> & radars)
+TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
+  const DetectedObject & object, std::vector<RadarInput> & radars)
 {
-  double estimated_velocity;
+  TwistWithCovariance twist{};
+
   if (radars.empty()) {
-    estimated_velocity = 0.0;
-    return estimated_velocity;
+    return twist;
   }
 
   // calculate median
-  double doppler_median = 0.0;
+  Twist twist_median{};
   auto ascending_func = [](const RadarInput & a, const RadarInput & b) {
-    return a.doppler_velocity < b.doppler_velocity;
+    return a.twist_with_covariance.twist < a.twist_with_covariance.twist;
   };
   std::sort(radars.begin(), radars.end(), ascending_func);
 
@@ -186,9 +155,12 @@ double RadarFusionToDetectedObject::estimateVelocity(std::vector<RadarInput> & r
   // calculate target_value * average
   double doppler_target_value_average = 0.0;
   if (param_.velocity_weight_target_value_average > 0.0) {
-    auto add_target_value_func = [](const double & a, RadarInput & b) { return a + b.target_value;
-}; double sum_target_value = std::accumulate(std::begin(radars), std::end(radars), 0.0,
-add_target_value_func); auto add_target_value_vel_func = [](const double & a, RadarInput & b) {
+    auto add_target_value_func = [](const double & a, RadarInput & b) {
+      return a + b.target_value;
+    };
+    double sum_target_value =
+      std::accumulate(std::begin(radars), std::end(radars), 0.0, add_target_value_func);
+    auto add_target_value_vel_func = [](const double & a, RadarInput & b) {
       return a + b.target_value * b.doppler_velocity;
     };
     doppler_target_value_average =
@@ -199,14 +171,89 @@ add_target_value_func); auto add_target_value_vel_func = [](const double & a, Ra
   // estimate doppler velocity with cost weight
   estimated_velocity = param_.velocity_weight_median * doppler_median +
                        param_.velocity_weight_average * doppler_average +
-                       param_.velocity_weight_target_value_average * doppler_target_value_average
-+ param_.velocity_weight_top_target_value * doppler_top_target_value;
+                       param_.velocity_weight_target_value_average * doppler_target_value_average +
+                       param_.velocity_weight_top_target_value * doppler_top_target_value;
 
   // Convert doppler velocity to twist
   if (param_.convert_doppler_to_twist) {
-     twist_with_covariance = convertDopplerToTwist(output_object, twist_with_covariance)
+    twist_with_covariance = convertDopplerToTwist(output_object, twist_with_covariance)
   }
   return estimated_velocity;
+}
+
+bool RadarFusionToDetectedObject::isQualified(const DetectedObject & object)
+{
+  if (split_object.classification[0].probability > param_.threshold_probability) {
+    return true;
+  } else {
+    if (!radars_within_object.empty()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+}
+
+TwistWithCovariance RadarFusionToDetectedObject::convertDopplerToTwist(
+  DetectedObject & object, TwistWithCovariance & twist_with_covariance)
+{
+  // [TODO] implement for radar pointcloud fusion
+  return twist_with_covariance;
+}
+
+Twist RadarFusionToDetectedObject::addTwist(Twist & twist_1, Twist & twist_2)
+{
+  Twist output{};
+  output.linear.x = twist_1.linear.x + twist_2.linear.x;
+  output.linear.y = twist_1.linear.y + twist_2.linear.y;
+  output.linear.z = twist_1.linear.z + twist_2.linear.z;
+  output.angular.x = twist_1.angular.x + twist_2.angular.x;
+  output.angular.y = twist_1.angular.y + twist_2.angular.y;
+  output.angular.z = twist_1.angular.z + twist_2.angular.z;
+  return output;
+}
+
+Twist RadarFusionToDetectedObject::scaleTwist(Twist & twist, double scale)
+{
+  Twist output{};
+  output.linear.x = twist.linear.x * scale;
+  output.linear.y = twist.linear.y * scale;
+  output.linear.z = twist.linear.z * scale;
+  output.angular.x = twist.angular.x * scale;
+  output.angular.y = twist.angular.y * scale;
+  output.angular.z = twist.angular.z * scale;
+  return output;
+}
+}  // namespace radar_fusion_to_detected_object
+
+/*
+
+std::vector<RadarInput> RadarFusionToDetectedObject::filterRadarWithinObject(
+  const autoware_perception_msgs::DynamicObjectWithFeature & object,
+  const std::vector<RadarInput> & radars)
+{
+  std::vector<RadarInput> filtered_radars;
+  autoware_utils::Point2d object_size{
+    object.object.shape.dimensions.x, object.object.shape.dimensions.y};
+  autoware_utils::LinearRing2d object_box =
+    autoware_utils::createObject2d(object_size, param_.bounding_box_margin);
+  object_box = autoware_utils::transformVector(
+    object_box, autoware_utils::pose2transform(object.object.state.pose_covariance.pose));
+  ROS_DEBUG(
+    "object box 0 x: %f, y: %f, object box 1 x: %f, y: %f", object_box.at(0).x(),
+    object_box.at(0).y(), object_box.at(1).x(), object_box.at(1).y());
+  for (const auto & ra : radars) {
+    autoware_utils::Point2d radar_point{ra.pose.position.x, ra.pose.position.y};
+    if (boost::geometry::within(radar_point, object_box)) {
+      filtered_radars.push_back(ra);
+    }
+  }
+  // remove the radar data whose frame_id is lower than the most
+  // [TODO] frame id filter
+  // std::string frame_id = radars.at(0).header.frame_id;
+  return filtered_radars;
+}
+
 }
 
 autoware_perception_msgs::DynamicObjectWithFeature RadarFusionToDetectedObject::mergeDoppler(
