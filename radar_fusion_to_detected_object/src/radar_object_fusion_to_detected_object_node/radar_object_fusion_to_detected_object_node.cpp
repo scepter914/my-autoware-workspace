@@ -16,10 +16,6 @@
 
 #include "radar_object_fusion_to_detected_object/radar_object_fusion_to_detected_object_node.hpp"
 
-#include <memory>
-#include <string>
-#include <vector>
-
 using namespace std::literals;
 using namespace std::placeholders;
 using std::chrono::duration;
@@ -48,6 +44,10 @@ bool update_param(
 
 namespace radar_fusion_to_detected_object
 {
+using autoware_auto_perception_msgs::msg::DetectedObject;
+using autoware_auto_perception_msgs::msg::DetectedObjects;
+using autoware_auto_perception_msgs::msg::TrackedObjects;
+
 RadarObjectFusionToDetectedObjectNode::RadarObjectFusionToDetectedObjectNode(
   const rclcpp::NodeOptions & node_options)
 : Node("radar_fusion_to_detected_object", node_options)

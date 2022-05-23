@@ -17,9 +17,11 @@
 #ifndef RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_NODE_HPP__
 #define RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_NODE_HPP__
 
-#include "example_interfaces/msg/int32.hpp"
 #include "radar_fusion_to_detected_object.hpp"
 #include "rclcpp/rclcpp.hpp"
+
+#include "autoware_auto_perception_msgs/msg/detected_objects.hpp"
+#include "autoware_auto_perception_msgs/msg/tracked_objects.hpp"
 
 #include <chrono>
 #include <memory>
@@ -28,7 +30,9 @@
 
 namespace radar_fusion_to_detected_object
 {
-using example_interfaces::msg::Int32;
+using autoware_auto_perception_msgs::msg::DetectedObject;
+using autoware_auto_perception_msgs::msg::DetectedObjects;
+using autoware_auto_perception_msgs::msg::TrackedObjects;
 
 class RadarObjectFusionToDetectedObjectNode : public rclcpp::Node
 {
@@ -42,16 +46,19 @@ public:
 
 private:
   // Subscriber
-  rclcpp::Subscription<Int32>::SharedPtr sub_data_{};
+  rclcpp::Subscription<DetectedObjects>::SharedPtr sub_object_{};
+  rclcpp::Subscription<TrackedObjects>::SharedPtr sub_radar_{};
 
   // Callback
-  void onData(const Int32::ConstSharedPtr msg);
+  void onDetectedObjects(const DetectedObjects::ConstSharedPtr msg);
+  void onRadarObjects(const TrackedObjects::ConstSharedPtr msg);
 
   // Data Buffer
-  Int32::ConstSharedPtr data_{};
+  DetectedObjects::ConstSharedPtr detected_objects_{};
+  TrackedObjects::ConstSharedPtr radar_objects_{};
 
   // Publisher
-  rclcpp::Publisher<Int32>::SharedPtr pub_data_{};
+  rclcpp::Publisher<DetectedObjects>::SharedPtr fused_objects_{};
 
   // Timer
   rclcpp::TimerBase::SharedPtr timer_{};
