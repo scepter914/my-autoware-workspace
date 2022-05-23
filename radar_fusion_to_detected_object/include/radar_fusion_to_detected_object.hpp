@@ -93,9 +93,10 @@ private:
   bool isQualified(const DetectedObject & object, const std::vector<RadarInput> & radars);
   TwistWithCovariance convertDopplerToTwist(
     const DetectedObject & object, const TwistWithCovariance & twist_with_covariance);
+  Twist addTwist(const Twist & twist_1, const Twist & twist_2);
+  Twist scaleTwist(const Twist & twist, const double scale);
   double getTwistNorm(const Twist & twist);
-  Point twistToPoint(const Twist & twist);
-  Twist PointToTwist(const Point & point);
+  Twist sumTwist(const std::vector<Twist> & twists);
 
 }  // namespace radar_fusion_to_detected_object
 

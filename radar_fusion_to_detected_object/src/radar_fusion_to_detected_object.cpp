@@ -179,13 +179,15 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
   }
 
   // estimate doppler velocity with cost weight
-  twist_with_covariance =
-    scaleTwist(twist_median, param_.velocity_weight_median) +
-    scaleTwist(twist_average, param_.velocity_weight_median) +
+  std::vector<Twist> weight_twists;
+  weight_twists.emplace_back(scaleTwist(twist_median, param_.velocity_weight_median));
+  weight_twists.emplace_back(scaleTwist(twist_average, param_.velocity_weight_average));
+  weight_twists.emplace_back(
+    scaleTwist(twist_top_target_value, param_.velocity_weight_top_target_value));
+  weight_twists.emplace_back(
+    scaleTwist(twist_target_value_average, param_.velocity_weight_target_value_average));
 
-    *doppler_median + param_.velocity_weight_average * doppler_average +
-    param_.velocity_weight_target_value_average * doppler_target_value_average +
-    param_.velocity_weight_top_target_value * doppler_top_target_value;
+  twist_with_covariance.twist = sumTwist(weight_twists);
 
   // Convert doppler velocity to twist
   if (param_.convert_doppler_to_twist) {
@@ -215,7 +217,6 @@ TwistWithCovariance RadarFusionToDetectedObject::convertDopplerToTwist(
   return twist_with_covariance;
 }
 
-/*
 Twist RadarFusionToDetectedObject::addTwist(const Twist & twist_1, const Twist & twist_2)
 {
   Twist output{};
@@ -239,7 +240,6 @@ Twist RadarFusionToDetectedObject::scaleTwist(const Twist & twist, const double 
   output.angular.z = twist.angular.z * scale;
   return output;
 }
-*/
 
 double RadarFusionToDetectedObject::getTwistNorm(const Twist & twist)
 {
@@ -248,23 +248,15 @@ double RadarFusionToDetectedObject::getTwistNorm(const Twist & twist)
     twist.linear.z * twist.linear.z);
 }
 
-Point twistToPoint(const Twist & twist)
+Twist RadarFusionToDetectedObject::sumTwist(const std::vector<Twist> & twists)
 {
-  Point output{};
-  output.x = twist.linear.x;
-  output.y = twist.linear.y;
-  output.z = twist.linear.z;
+  Twist output{};
+  for (const auto & twist : twists) {
+    output = addTwist(output, twist);
+  }
   return output;
 }
 
-Twist twistToPoint(const Point & point)
-{
-  Twist output{};
-  output.linear.x = point.x;
-  output.linear.y = point.y;
-  output.linear.z = point.z;
-  return output;
-}
 }  // namespace radar_fusion_to_detected_object
 
 /*
