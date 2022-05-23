@@ -18,7 +18,7 @@
 #define RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_NODE_HPP__
 
 #include "example_interfaces/msg/int32.hpp"
-#include "radar_fusion_to_detected_object/radar_fusion_to_detected_object.hpp"
+#include "radar_fusion_to_detected_object.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 #include <chrono>
@@ -30,10 +30,10 @@ namespace radar_fusion_to_detected_object
 {
 using example_interfaces::msg::Int32;
 
-class RadarFusionToDetectedObjectNode : public rclcpp::Node
+class RadarObjectFusionToDetectedObjectNode : public rclcpp::Node
 {
 public:
-  explicit RadarFusionToDetectedObjectNode(const rclcpp::NodeOptions & node_options);
+  explicit RadarObjectFusionToDetectedObjectNode(const rclcpp::NodeOptions & node_options);
 
   struct NodeParam
   {

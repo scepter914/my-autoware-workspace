@@ -18,13 +18,13 @@ ament_auto_find_build_dependencies()
 
 ## Targets
 ament_auto_add_library(radar_object_fusion_to_detected_object_node_component SHARED
-  src/radar_fusion_to_detected_object_node/radar_object_fusion_to_detected_object_node.cpp
+  src/radar_object_fusion_to_detected_object_node/radar_object_fusion_to_detected_object_node.cpp
   src/radar_fusion_to_detected_object.cpp
 )
 
 rclcpp_components_register_node(radar_object_fusion_to_detected_object_node_component
-  PLUGIN "radar_fusion_to_detected_object::RadarFusionToDetectedObjectNode"
-  EXECUTABLE radar_fusion_to_detected_object_node
+  PLUGIN "radar_object_fusion_to_detected_object::RadarFusionToDetectedObjectNode"
+  EXECUTABLE radar_object_fusion_to_detected_object_node
 )
 
 ## Tests

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "radar_fusion_to_detected_object/radar_fusion_to_detected_object_node.hpp"
+#include "radar_object_fusion_to_detected_object/radar_object_fusion_to_detected_object_node.hpp"
 
 #include <memory>
 #include <string>
@@ -48,13 +48,13 @@ bool update_param(
 
 namespace radar_fusion_to_detected_object
 {
-RadarFusionToDetectedObjectNode::RadarFusionToDetectedObjectNode(
+RadarObjectFusionToDetectedObjectNode::RadarObjectFusionToDetectedObjectNode(
   const rclcpp::NodeOptions & node_options)
 : Node("radar_fusion_to_detected_object", node_options)
 {
   // Parameter Server
   set_param_res_ = this->add_on_set_parameters_callback(
-    std::bind(&RadarFusionToDetectedObjectNode::onSetParam, this, _1));
+    std::bind(&RadarObjectFusionToDetectedObjectNode::onSetParam, this, _1));
 
   // Node Parameter
   node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
@@ -68,7 +68,8 @@ RadarFusionToDetectedObjectNode::RadarFusionToDetectedObjectNode(
 
   // Subscriber
   sub_data_ = create_subscription<Int32>(
-    "~/input/data", rclcpp::QoS{1}, std::bind(&RadarFusionToDetectedObjectNode::onData, this, _1));
+    "~/input/data", rclcpp::QoS{1},
+    std::bind(&RadarObjectFusionToDetectedObjectNode::onData, this, _1));
 
   // Publisher
   pub_data_ = create_publisher<Int32>("~/output/data", 1);
@@ -77,12 +78,12 @@ RadarFusionToDetectedObjectNode::RadarFusionToDetectedObjectNode(
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
   timer_ = rclcpp::create_timer(
     this, get_clock(), update_period_ns,
-    std::bind(&RadarFusionToDetectedObjectNode::onTimer, this));
+    std::bind(&RadarObjectFusionToDetectedObjectNode::onTimer, this));
 }
 
-void RadarFusionToDetectedObjectNode::onData(const Int32::ConstSharedPtr msg) { data_ = msg; }
+void RadarObjectFusionToDetectedObjectNode::onData(const Int32::ConstSharedPtr msg) { data_ = msg; }
 
-rcl_interfaces::msg::SetParametersResult RadarFusionToDetectedObjectNode::onSetParam(
+rcl_interfaces::msg::SetParametersResult RadarObjectFusionToDetectedObjectNode::onSetParam(
   const std::vector<rclcpp::Parameter> & params)
 {
   rcl_interfaces::msg::SetParametersResult result;
@@ -127,7 +128,7 @@ rcl_interfaces::msg::SetParametersResult RadarFusionToDetectedObjectNode::onSetP
   return result;
 }
 
-bool RadarFusionToDetectedObjectNode::isDataReady()
+bool RadarObjectFusionToDetectedObjectNode::isDataReady()
 {
   if (!data_) {
     RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for data msg...");
@@ -137,7 +138,7 @@ bool RadarFusionToDetectedObjectNode::isDataReady()
   return true;
 }
 
-void RadarFusionToDetectedObjectNode::onTimer()
+void RadarObjectFusionToDetectedObjectNode::onTimer()
 {
   if (!isDataReady()) {
     return;
@@ -161,4 +162,5 @@ void RadarFusionToDetectedObjectNode::onTimer()
 }  // namespace radar_fusion_to_detected_object
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(radar_fusion_to_detected_object::RadarFusionToDetectedObjectNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(
+  radar_fusion_to_detected_object::RadarObjectFusionToDetectedObjectNode)
