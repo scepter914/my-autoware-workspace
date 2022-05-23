@@ -29,7 +29,9 @@ namespace radar_fusion_to_detected_object
 {
 using autoware_auto_perception_msgs::msg::DetectedObject;
 using autoware_auto_perception_msgs::msg::DetectedObjects;
+using geometry_msgs::msg::Point;
 using geometry_msgs::msg::PoseWithCovariance;
+using geometry_msgs::msg::Twist;
 using geometry_msgs::msg::TwistWithCovariance;
 
 void RadarFusionToDetectedObject::setParam(const Param & param)
@@ -116,68 +118,74 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
   const DetectedObject & object, std::vector<RadarInput> & radars)
 {
   TwistWithCovariance twist_with_covariance{};
-
   if (radars.empty()) {
     return twist_with_covariance;
   }
 
   // calculate median
   Twist twist_median{};
-  auto ascending_func = [&](const RadarInput & a, const RadarInput & b) {
-    return getTwistNorm(a.twist_with_covariance.twist) <
-           getTwistNorm(b.twist_with_covariance.twist);
-  };
-  std::sort(radars.begin(), radars.end(), ascending_func);
 
-  if (radars.size() % 2 == 1) {
-    int median_index = (radars.size() - 1) / 2;
-    doppler_median = radars.at(median_index).doppler_velocity;
-  } else {
-    int median_index = radars.size() / 2;
-    doppler_median =
-      (radars.at(median_index - 1).doppler_velocity + radars.at(median_index).doppler_velocity) *
-      0.5;
+  if (param_.velocity_weight_median > 0.0) {
+    auto ascending_func = [&](const RadarInput & a, const RadarInput & b) {
+      return getTwistNorm(a.twist_with_covariance.twist) <
+             getTwistNorm(b.twist_with_covariance.twist);
+    };
+    std::sort(radars.begin(), radars.end(), ascending_func);
+
+    if (radars.size() % 2 == 1) {
+      int median_index = (radars.size() - 1) / 2;
+      twist_median = radars.at(median_index).twist_with_covariance.twist;
+    } else {
+      int median_index = radars.size() / 2;
+
+      twist_median = scaleTwist(
+        addTwist(
+          radars.at(median_index - 1).twist_with_covariance.twist,
+          radars.at(median_index).twist_with_covariance.twist),
+        0.5);
+    }
   }
 
   // calculate average
-  double doppler_average = 0.0;
+  Twist twist_average{};
   if (param_.velocity_weight_average > 0.0) {
-    auto add_v_func = [](const double & a, RadarInput & b) { return a + b.doppler_velocity; };
-    doppler_average =
-      std::accumulate(std::begin(radars), std::end(radars), 0.0, add_v_func) / radars.size();
+    for (const auto & radar : radars) {
+      twist_average = addTwist(twist_average, radar.twist_with_covariance.twist);
+    }
+    twist_average = scaleTwist(twist_average, (1.0 / radars.size()));
   }
 
   // calculate top target_value
-  double doppler_top_target_value = 0.0;
+  Twist twist_top_target_value{};
   if (param_.velocity_weight_top_target_value > 0.0) {
     auto comp_func = [](const RadarInput & a, const RadarInput & b) {
       return a.target_value < b.target_value;
     };
     auto iter = std::max_element(std::begin(radars), std::end(radars), comp_func);
-    doppler_top_target_value = iter->target_value;
+    twist_top_target_value = iter->twist_with_covariance.twist;
   }
 
   // calculate target_value * average
-  double doppler_target_value_average = 0.0;
+  Twist twist_target_value_average{};
+  double sum_target_value = 0.0;
   if (param_.velocity_weight_target_value_average > 0.0) {
-    auto add_target_value_func = [](const double & a, RadarInput & b) {
-      return a + b.target_value;
-    };
-    double sum_target_value =
-      std::accumulate(std::begin(radars), std::end(radars), 0.0, add_target_value_func);
-    auto add_target_value_vel_func = [](const double & a, RadarInput & b) {
-      return a + b.target_value * b.doppler_velocity;
-    };
-    doppler_target_value_average =
-      std::accumulate(std::begin(radars), std::end(radars), 0.0, add_target_value_vel_func) /
-      sum_target_value;
+    for (const auto & radar : radars) {
+      twist_target_value_average = scaleTwist(
+        addTwist(twist_target_value_average, radar.twist_with_covariance.twist),
+        radar.target_value);
+      sum_target_value += radar.target_value;
+    }
+    twist_target_value_average = scaleTwist(twist_target_value_average, 1.0 / sum_target_value);
   }
 
   // estimate doppler velocity with cost weight
-  estimated_velocity = param_.velocity_weight_median * doppler_median +
-                       param_.velocity_weight_average * doppler_average +
-                       param_.velocity_weight_target_value_average * doppler_target_value_average +
-                       param_.velocity_weight_top_target_value * doppler_top_target_value;
+  twist_with_covariance =
+    scaleTwist(twist_median, param_.velocity_weight_median) +
+    scaleTwist(twist_average, param_.velocity_weight_median) +
+
+    *doppler_median + param_.velocity_weight_average * doppler_average +
+    param_.velocity_weight_target_value_average * doppler_target_value_average +
+    param_.velocity_weight_top_target_value * doppler_top_target_value;
 
   // Convert doppler velocity to twist
   if (param_.convert_doppler_to_twist) {
@@ -207,6 +215,7 @@ TwistWithCovariance RadarFusionToDetectedObject::convertDopplerToTwist(
   return twist_with_covariance;
 }
 
+/*
 Twist RadarFusionToDetectedObject::addTwist(const Twist & twist_1, const Twist & twist_2)
 {
   Twist output{};
@@ -230,13 +239,32 @@ Twist RadarFusionToDetectedObject::scaleTwist(const Twist & twist, const double 
   output.angular.z = twist.angular.z * scale;
   return output;
 }
+*/
 
 double RadarFusionToDetectedObject::getTwistNorm(const Twist & twist)
 {
-  return twist.linear.x * twist.linear.x + twist.linear.y * twist.linear.y +
-         twist.linear.z * twist.linear.z;
+  return std::sqrt(
+    twist.linear.x * twist.linear.x + twist.linear.y * twist.linear.y +
+    twist.linear.z * twist.linear.z);
 }
 
+Point twistToPoint(const Twist & twist)
+{
+  Point output{};
+  output.x = twist.linear.x;
+  output.y = twist.linear.y;
+  output.z = twist.linear.z;
+  return output;
+}
+
+Twist twistToPoint(const Point & point)
+{
+  Twist output{};
+  output.linear.x = point.x;
+  output.linear.y = point.y;
+  output.linear.z = point.z;
+  return output;
+}
 }  // namespace radar_fusion_to_detected_object
 
 /*
