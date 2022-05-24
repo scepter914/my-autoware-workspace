@@ -117,7 +117,7 @@ RadarFusionToDetectedObject::filterRadarWithinObject(
     Point2d radar_point{
       radar.pose_with_covariance.pose.position.x, radar.pose_with_covariance.pose.position.y};
     if (boost::geometry::within(radar_point, object_box)) {
-      outputs.emplace_back(radar_point);
+      outputs.emplace_back(radar);
     }
   }
   return outputs;
@@ -133,7 +133,7 @@ std::vector<DetectedObject> RadarFusionToDetectedObject::splitObject(
 }
 
 TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
-  const DetectedObject & object, const std::vector<RadarInput> & radars)
+  const DetectedObject & object, std::vector<RadarInput> & radars)
 {
   TwistWithCovariance twist_with_covariance{};
   if (radars.empty()) {
@@ -142,7 +142,6 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
 
   // calculate median
   Twist twist_median{};
-
   if (param_.velocity_weight_median > 0.0) {
     auto ascending_func = [&](const RadarInput & a, const RadarInput & b) {
       return getTwistNorm(a.twist_with_covariance.twist) <

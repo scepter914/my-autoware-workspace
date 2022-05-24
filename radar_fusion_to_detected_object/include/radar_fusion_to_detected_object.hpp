@@ -92,7 +92,7 @@ private:
   std::vector<DetectedObject> splitObject(
     const DetectedObject & object, const std::vector<RadarInput> & radars);
   TwistWithCovariance estimateTwist(
-    const DetectedObject & object, const std::vector<RadarInput> & radars);
+    const DetectedObject & object, std::vector<RadarInput> & radars);
   bool isQualified(const DetectedObject & object, const std::vector<RadarInput> & radars);
   TwistWithCovariance convertDopplerToTwist(
     const DetectedObject & object, const TwistWithCovariance & twist_with_covariance);
