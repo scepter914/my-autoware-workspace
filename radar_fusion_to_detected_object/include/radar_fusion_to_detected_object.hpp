@@ -72,7 +72,7 @@ public:
 
   struct Input
   {
-    std::vector<RadarInput> radars;
+    std::vector<RadarInput> radars = {};
     DetectedObjects objects{};
   };
 

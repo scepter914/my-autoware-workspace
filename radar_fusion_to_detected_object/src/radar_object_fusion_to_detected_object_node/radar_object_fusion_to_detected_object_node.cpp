@@ -190,7 +190,7 @@ void RadarObjectFusionToDetectedObjectNode::onTimer()
 
   input.objects = *detected_objects_;
   for (const auto & radar_object_ : radar_objects_->objects) {
-    input.radars.emplace_back(radar_object_, radar_objects_->header);
+    input.radars.emplace_back(setRadarInput(radar_object_, radar_objects_->header));
   }
 
   // Update

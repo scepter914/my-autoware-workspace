@@ -123,12 +123,6 @@ RadarFusionToDetectedObject::filterRadarWithinObject(
   return outputs;
 }
 
-std::vector<RadarFusionToDetectedObject::RadarInput>
-RadarFusionToDetectedObject::filterRadarWithinObject(
-  const DetectedObject & object, const std::vector<RadarInput> & radars)
-{
-}
-
 std::vector<DetectedObject> RadarFusionToDetectedObject::splitObject(
   const DetectedObject & object, const std::vector<RadarInput> & radars)
 {
