@@ -18,6 +18,7 @@
 #define RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_HPP__
 
 #include "rclcpp/logger.hpp"
+#include "tier4_autoware_utils/tier4_autoware_utils.hpp"
 
 #include "autoware_auto_perception_msgs/msg/detected_objects.hpp"
 #include "geometry_msgs/msg/pose_with_covariance.hpp"
@@ -36,6 +37,8 @@ using geometry_msgs::msg::Point;
 using geometry_msgs::msg::PoseWithCovariance;
 using geometry_msgs::msg::Twist;
 using geometry_msgs::msg::TwistWithCovariance;
+using tier4_autoware_utils::LinearRing2d;
+using tier4_autoware_utils::Point2d;
 
 class RadarFusionToDetectedObject
 {
@@ -61,21 +64,21 @@ public:
 
   struct RadarInput
   {
-    std_msgs::msg::Header header;
-    PoseWithCovariance pose_with_covariance;
-    TwistWithCovariance twist_with_covariance;
-    double target_value;
+    std_msgs::msg::Header header{};
+    PoseWithCovariance pose_with_covariance{};
+    TwistWithCovariance twist_with_covariance{};
+    double target_value{};
   };
 
   struct Input
   {
     std::vector<RadarInput> radars;
-    DetectedObjects objects;
+    DetectedObjects objects{};
   };
 
   struct Output
   {
-    DetectedObjects objects;
+    DetectedObjects objects{};
   };
 
   void setParam(const Param & param);
@@ -89,7 +92,7 @@ private:
   std::vector<DetectedObject> splitObject(
     const DetectedObject & object, const std::vector<RadarInput> & radars);
   TwistWithCovariance estimateTwist(
-    const DetectedObject & object, std::vector<RadarInput> & radars);
+    const DetectedObject & object, const std::vector<RadarInput> & radars);
   bool isQualified(const DetectedObject & object, const std::vector<RadarInput> & radars);
   TwistWithCovariance convertDopplerToTwist(
     const DetectedObject & object, const TwistWithCovariance & twist_with_covariance);
@@ -99,5 +102,28 @@ private:
   Twist sumTwist(const std::vector<Twist> & twists);
 };
 }  // namespace radar_fusion_to_detected_object
+
+namespace tier4_autoware_utils
+{
+using tier4_autoware_utils::LinearRing2d;
+using tier4_autoware_utils::Point2d;
+
+inline LinearRing2d createObject2d(const Point2d object_size, const double margin = 0.0)
+{
+  const double x_front = object_size.x() / 2.0 + margin;
+  const double x_rear = -object_size.x() / 2.0 - margin;
+  const double y_left = object_size.y() / 2.0 + margin;
+  const double y_right = -object_size.y() / 2.0 - margin;
+
+  LinearRing2d box{};
+  box.push_back(Point2d{x_front, y_left});
+  box.push_back(Point2d{x_front, y_right});
+  box.push_back(Point2d{x_rear, y_right});
+  box.push_back(Point2d{x_rear, y_left});
+  box.push_back(Point2d{x_front, y_left});
+
+  return box;
+}
+}  // namespace tier4_autoware_utils
 
 #endif  // RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_HPP__

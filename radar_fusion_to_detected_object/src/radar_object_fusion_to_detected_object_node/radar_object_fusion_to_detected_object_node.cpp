@@ -186,7 +186,7 @@ void RadarObjectFusionToDetectedObjectNode::onTimer()
   }
 
   // Set input data
-  RadarFusionToDetectedObject::Input input;
+  RadarFusionToDetectedObject::Input input{};
 
   input.objects = *detected_objects_;
   for (const auto & radar_object_ : radar_objects_->objects) {

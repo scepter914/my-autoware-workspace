@@ -16,7 +16,6 @@
 
 #include "radar_fusion_to_detected_object.hpp"
 
-#include "tier4_autoware_utils/tier4_autoware_utils.hpp"
 // #include "tier4_autoware_utils/geometry/geometry.hpp"
 // #include "tier4_autoware_utils/geometry/boost_geometry.hpp"
 
@@ -68,7 +67,7 @@ void RadarFusionToDetectedObject::setParam(const Param & param)
 RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
   const RadarFusionToDetectedObject::Input & input)
 {
-  RadarFusionToDetectedObject::Output output;
+  RadarFusionToDetectedObject::Output output{};
   output.objects.header = input.objects.header;
 
   for (const auto & object : input.objects.objects) {
@@ -106,7 +105,7 @@ std::vector<RadarFusionToDetectedObject::RadarInput>
 RadarFusionToDetectedObject::filterRadarWithinObject(
   const DetectedObject & object, const std::vector<RadarInput> & radars)
 {
-  std::vector<RadarInput> outputs;
+  std::vector<RadarInput> outputs{};
 
   tier4_autoware_utils::Point2d object_size{object.shape.dimensions.x, object.shape.dimensions.y};
   LinearRing2d object_box =
@@ -134,13 +133,13 @@ std::vector<DetectedObject> RadarFusionToDetectedObject::splitObject(
   const DetectedObject & object, const std::vector<RadarInput> & radars)
 {
   // [TODO] Implementation
-  std::vector<DetectedObject> output;
+  std::vector<DetectedObject> output{};
   output.emplace_back(object);
   return output;
 }
 
 TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
-  const DetectedObject & object, std::vector<RadarInput> & radars)
+  const DetectedObject & object, const std::vector<RadarInput> & radars)
 {
   TwistWithCovariance twist_with_covariance{};
   if (radars.empty()) {
@@ -204,7 +203,7 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
   }
 
   // estimate doppler velocity with cost weight
-  std::vector<Twist> weight_twists;
+  std::vector<Twist> weight_twists{};
   weight_twists.emplace_back(scaleTwist(twist_median, param_.velocity_weight_median));
   weight_twists.emplace_back(scaleTwist(twist_average, param_.velocity_weight_average));
   weight_twists.emplace_back(
@@ -239,6 +238,7 @@ TwistWithCovariance RadarFusionToDetectedObject::convertDopplerToTwist(
   const DetectedObject & object, const TwistWithCovariance & twist_with_covariance)
 {
   // [TODO] implement for radar pointcloud fusion
+  std::cout << "debug" << object.classification.at(0).probability << std::endl;
   return twist_with_covariance;
 }
 
@@ -284,30 +284,6 @@ Twist RadarFusionToDetectedObject::sumTwist(const std::vector<Twist> & twists)
 }
 
 }  // namespace radar_fusion_to_detected_object
-
-namespace tier4_autoware_utils
-{
-
-using tier4_autoware_utils::LinearRing2d;
-using tier4_autoware_utils::Point2d;
-
-inline LinearRing2d createObject2d(const Point2d object_size, const double margin = 0.0)
-{
-  const double x_front = object_size.x() / 2.0 + margin;
-  const double x_rear = -object_size.x() / 2.0 - margin;
-  const double y_left = object_size.y() / 2.0 + margin;
-  const double y_right = -object_size.y() / 2.0 - margin;
-
-  autoware_utils::LinearRing2d box;
-  box.push_back(Point2d{x_front, y_left});
-  box.push_back(Point2d{x_front, y_right});
-  box.push_back(Point2d{x_rear, y_right});
-  box.push_back(Point2d{x_rear, y_left});
-  box.push_back(Point2d{x_front, y_left});
-
-  return box;
-}
-}  // namespace tier4_autoware_utils
 
 /*
 
