@@ -176,6 +176,14 @@ bool RadarObjectFusionToDetectedObjectNode::isDataReady()
     RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for radar objects data msg...");
     return false;
   }
+
+  if (detected_objects_->header.frame_id != radar_objects_->header.frame_id) {
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), 1000,
+      "The frame id between detected objects and radar objects is not same");
+    return false;
+  }
+
   return true;
 }
 
