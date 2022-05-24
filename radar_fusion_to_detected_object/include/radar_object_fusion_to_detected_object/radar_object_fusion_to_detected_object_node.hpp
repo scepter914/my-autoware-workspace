@@ -58,7 +58,7 @@ private:
   TrackedObjects::ConstSharedPtr radar_objects_{};
 
   // Publisher
-  rclcpp::Publisher<DetectedObjects>::SharedPtr fused_objects_{};
+  rclcpp::Publisher<DetectedObjects>::SharedPtr pub_objects_{};
 
   // Timer
   rclcpp::TimerBase::SharedPtr timer_{};

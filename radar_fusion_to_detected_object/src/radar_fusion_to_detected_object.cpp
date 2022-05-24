@@ -43,18 +43,18 @@ void RadarFusionToDetectedObject::setParam(const Param & param)
   // normalize weight param
   double sum_weight = param.velocity_weight_median + param.velocity_weight_average +
                       param.velocity_weight_target_value_average +
-                      param.velocity_weight_top_target_value;
+                      param.velocity_weight_target_value_top;
   if (sum_weight < 0.01) {
     param_.velocity_weight_median = 1.0;
     param_.velocity_weight_average = 0.0;
     param_.velocity_weight_target_value_average = 0.0;
-    param_.velocity_weight_top_target_value = 0.0;
+    param_.velocity_weight_target_value_top = 0.0;
   } else {
     param_.velocity_weight_median = param.velocity_weight_median / sum_weight;
     param_.velocity_weight_average = param.velocity_weight_average / sum_weight;
     param_.velocity_weight_target_value_average =
       param.velocity_weight_target_value_average / sum_weight;
-    param_.velocity_weight_top_target_value = param.velocity_weight_top_target_value / sum_weight;
+    param_.velocity_weight_target_value_top = param.velocity_weight_target_value_top / sum_weight;
   }
 
   // Parameters for fixing object information
@@ -157,7 +157,7 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
 
   // calculate top target_value
   Twist twist_top_target_value{};
-  if (param_.velocity_weight_top_target_value > 0.0) {
+  if (param_.velocity_weight_target_value_top > 0.0) {
     auto comp_func = [](const RadarInput & a, const RadarInput & b) {
       return a.target_value < b.target_value;
     };
@@ -183,7 +183,7 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
   weight_twists.emplace_back(scaleTwist(twist_median, param_.velocity_weight_median));
   weight_twists.emplace_back(scaleTwist(twist_average, param_.velocity_weight_average));
   weight_twists.emplace_back(
-    scaleTwist(twist_top_target_value, param_.velocity_weight_top_target_value));
+    scaleTwist(twist_top_target_value, param_.velocity_weight_target_value_top));
   weight_twists.emplace_back(
     scaleTwist(twist_target_value_average, param_.velocity_weight_target_value_average));
 

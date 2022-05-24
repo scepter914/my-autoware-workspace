@@ -60,19 +60,38 @@ RadarObjectFusionToDetectedObjectNode::RadarObjectFusionToDetectedObjectNode(
   node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
 
   // Core Parameter
-  core_param_.data = declare_parameter<int>("core_params.data");
+  core_param_.bounding_box_margin =
+    declare_parameter<double>("core_params.bounding_box_margin", 0.5);
+  core_param_.split_threshold_velocity =
+    declare_parameter<double>("core_params.split_threshold_velocity", 0.0);
+  core_param_.velocity_weight_average =
+    declare_parameter<double>("core_params.velocity_weight_average", 0.0);
+  core_param_.velocity_weight_median =
+    declare_parameter<double>("core_params.velocity_weight_median", 0.0);
+  core_param_.velocity_weight_target_value_average =
+    declare_parameter<double>("core_params.velocity_weight_target_value_average", 0.0);
+  core_param_.velocity_weight_target_value_top =
+    declare_parameter<double>("core_params.velocity_weight_target_value_top", 1.0);
+  core_param_.convert_doppler_to_twist =
+    declare_parameter<bool>("core_params.convert_doppler_to_twist", false);
+  core_param_.threshold_probability =
+    declare_parameter<double>("core_params.threshold_probability", 0.0);
 
   // Core
   radar_fusion_to_detected_object_ = std::make_unique<RadarFusionToDetectedObject>(get_logger());
   radar_fusion_to_detected_object_->setParam(core_param_);
 
   // Subscriber
-  sub_data_ = create_subscription<Int32>(
-    "~/input/data", rclcpp::QoS{1},
-    std::bind(&RadarObjectFusionToDetectedObjectNode::onData, this, _1));
+  sub_object_ = create_subscription<DetectedObjects>(
+    "~/input/objects", rclcpp::QoS{1},
+    std::bind(&RadarObjectFusionToDetectedObjectNode::onDetectedObjects, this, _1));
+
+  sub_radar_ = create_subscription<TrackedObjects>(
+    "~/input/radars", rclcpp::QoS{1},
+    std::bind(&RadarObjectFusionToDetectedObjectNode::onRadarObjects, this, _1));
 
   // Publisher
-  pub_data_ = create_publisher<Int32>("~/output/data", 1);
+  pub_objects_ = create_publisher<DetectedObjects>("~/output/objects", 1);
 
   // Timer
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
@@ -81,7 +100,15 @@ RadarObjectFusionToDetectedObjectNode::RadarObjectFusionToDetectedObjectNode(
     std::bind(&RadarObjectFusionToDetectedObjectNode::onTimer, this));
 }
 
-void RadarObjectFusionToDetectedObjectNode::onData(const Int32::ConstSharedPtr msg) { data_ = msg; }
+void RadarObjectFusionToDetectedObjectNode::onDetectedObjects(
+  const DetectedObjects::ConstSharedPtr msg)
+{
+  detected_objects_ = msg;
+}
+void RadarObjectFusionToDetectedObjectNode::onRadarObjects(const TrackedObjects::ConstSharedPtr msg)
+{
+  radar_objects_ = msg;
+}
 
 rcl_interfaces::msg::SetParametersResult RadarObjectFusionToDetectedObjectNode::onSetParam(
   const std::vector<rclcpp::Parameter> & params)
@@ -107,7 +134,16 @@ rcl_interfaces::msg::SetParametersResult RadarObjectFusionToDetectedObjectNode::
       auto p = core_param_;
 
       // Update params
-      update_param(params, "core_params.data", p.data);
+      update_param(params, "core_params.bounding_box_margin", p.bounding_box_margin);
+      update_param(params, "core_params.split_threshold_velocity", p.split_threshold_velocity);
+      update_param(params, "core_params.velocity_weight_average", p.velocity_weight_average);
+      update_param(params, "core_params.velocity_weight_median", p.velocity_weight_median);
+      update_param(
+        params, "core_params.velocity_weight_target_value_average",
+        p.velocity_weight_target_value_average);
+      update_param(
+        params, "core_params.velocity_weight_target_value_average",
+        p.velocity_weight_target_value_average);
 
       // Copy back to member variable
       core_param_ = p;

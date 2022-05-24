@@ -49,10 +49,10 @@ public:
     double split_threshold_velocity{};
 
     // Weight param for velocity estimation
-    double velocity_weight_median{};
     double velocity_weight_average{};
+    double velocity_weight_median{};
     double velocity_weight_target_value_average{};
-    double velocity_weight_top_target_value{};
+    double velocity_weight_target_value_top{};
 
     // Parameters for fixing object information
     bool convert_doppler_to_twist{};
