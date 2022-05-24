@@ -16,6 +16,8 @@
 
 #include "radar_object_fusion_to_detected_object/radar_object_fusion_to_detected_object_node.hpp"
 
+#include "rclcpp/rclcpp.hpp"
+
 using namespace std::literals;
 using namespace std::placeholders;
 using std::chrono::duration;
@@ -142,8 +144,7 @@ rcl_interfaces::msg::SetParametersResult RadarObjectFusionToDetectedObjectNode::
         params, "core_params.velocity_weight_target_value_average",
         p.velocity_weight_target_value_average);
       update_param(
-        params, "core_params.velocity_weight_target_value_average",
-        p.velocity_weight_target_value_average);
+        params, "core_params.velocity_weight_target_value_top", p.velocity_weight_target_value_top);
 
       // Copy back to member variable
       core_param_ = p;
@@ -166,11 +167,15 @@ rcl_interfaces::msg::SetParametersResult RadarObjectFusionToDetectedObjectNode::
 
 bool RadarObjectFusionToDetectedObjectNode::isDataReady()
 {
-  if (!data_) {
-    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for data msg...");
+  if (!detected_objects_) {
+    RCLCPP_INFO_THROTTLE(
+      get_logger(), *get_clock(), 1000, "waiting for detected objects data msg...");
     return false;
   }
-
+  if (!radar_objects_) {
+    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for radar objects data msg...");
+    return false;
+  }
   return true;
 }
 
@@ -183,16 +188,30 @@ void RadarObjectFusionToDetectedObjectNode::onTimer()
   // Set input data
   RadarFusionToDetectedObject::Input input;
 
-  input.data = data_->data;
+  input.objects = *detected_objects_;
+  for (const auto & radar_object_ : radar_objects_->objects) {
+    input.radars.emplace_back(radar_object_, radar_objects_->header);
+  }
 
   // Update
   output_ = radar_fusion_to_detected_object_->update(input);
 
   // Sample
-  pub_data_->publish(example_interfaces::build<Int32>().data(output_.data));
-  // pub_data->publish(hoge_msgs);
+  pub_objects_->publish(output_.objects);
+  // RCLCPP_INFO(
+  //   get_logger(), "input size, output size: %d, %d", (int)input_.radars.size(),
+  //   (int)output_.objects.size());
+}
 
-  RCLCPP_INFO(get_logger(), "input, output: %d, %d", input_.data, output_.data);
+RadarFusionToDetectedObject::RadarInput RadarObjectFusionToDetectedObjectNode::setRadarInput(
+  TrackedObject radar_object, std_msgs::msg::Header header)
+{
+  RadarFusionToDetectedObject::RadarInput output{};
+  output.header = header;
+  output.pose_with_covariance = radar_object.kinematics.pose_with_covariance;
+  output.twist_with_covariance = radar_object.kinematics.twist_with_covariance;
+  output.target_value = radar_object.classification.at(0).probability;
+  return output;
 }
 
 }  // namespace radar_fusion_to_detected_object

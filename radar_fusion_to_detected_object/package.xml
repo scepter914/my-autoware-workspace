@@ -9,7 +9,6 @@
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
-  <depend>example_interfaces</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
 
@@ -18,7 +17,9 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
+
   <depend>autoware_auto_perception_msgs</depend>
+  <depend>tier4_autoware_utils</depend>
 
   <test_depend>ament_clang_format</test_depend>
   <test_depend>ament_lint_auto</test_depend>

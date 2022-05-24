@@ -97,7 +97,7 @@ private:
   Twist scaleTwist(const Twist & twist, const double scale);
   double getTwistNorm(const Twist & twist);
   Twist sumTwist(const std::vector<Twist> & twists);
-
+};
 }  // namespace radar_fusion_to_detected_object
 
 #endif  // RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_HPP__

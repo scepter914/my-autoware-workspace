@@ -32,6 +32,7 @@ namespace radar_fusion_to_detected_object
 {
 using autoware_auto_perception_msgs::msg::DetectedObject;
 using autoware_auto_perception_msgs::msg::DetectedObjects;
+using autoware_auto_perception_msgs::msg::TrackedObject;
 using autoware_auto_perception_msgs::msg::TrackedObjects;
 
 class RadarObjectFusionToDetectedObjectNode : public rclcpp::Node
@@ -79,6 +80,10 @@ private:
   RadarFusionToDetectedObject::Output output_{};
   RadarFusionToDetectedObject::Param core_param_{};
   std::unique_ptr<RadarFusionToDetectedObject> radar_fusion_to_detected_object_{};
+
+  // Lapper
+  RadarFusionToDetectedObject::RadarInput setRadarInput(
+    TrackedObject radar_object, std_msgs::msg::Header header);
 };
 
 }  // namespace radar_fusion_to_detected_object

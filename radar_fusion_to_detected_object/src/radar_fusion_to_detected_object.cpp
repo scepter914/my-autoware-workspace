@@ -16,8 +16,9 @@
 
 #include "radar_fusion_to_detected_object.hpp"
 
-// #include "autoware_utils/geometry/boost_geometry.h"
-// #include "autoware_utils/geometry/geometry.h"
+#include "tier4_autoware_utils/tier4_autoware_utils.hpp"
+// #include "tier4_autoware_utils/geometry/geometry.hpp"
+// #include "tier4_autoware_utils/geometry/boost_geometry.hpp"
 
 #include <boost/geometry.hpp>
 
@@ -33,6 +34,8 @@ using geometry_msgs::msg::Point;
 using geometry_msgs::msg::PoseWithCovariance;
 using geometry_msgs::msg::Twist;
 using geometry_msgs::msg::TwistWithCovariance;
+using tier4_autoware_utils::LinearRing2d;
+using tier4_autoware_utils::Point2d;
 
 void RadarFusionToDetectedObject::setParam(const Param & param)
 {
@@ -97,6 +100,28 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
     }
   }
   return output;
+}
+
+std::vector<RadarFusionToDetectedObject::RadarInput>
+RadarFusionToDetectedObject::filterRadarWithinObject(
+  const DetectedObject & object, const std::vector<RadarInput> & radars)
+{
+  std::vector<RadarInput> outputs;
+
+  tier4_autoware_utils::Point2d object_size{object.shape.dimensions.x, object.shape.dimensions.y};
+  LinearRing2d object_box =
+    tier4_autoware_utils::createObject2d(object_size, param_.bounding_box_margin);
+  object_box = tier4_autoware_utils::transformVector(
+    object_box, tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
+
+  for (const auto & radar : radars) {
+    Point2d radar_point{
+      radar.pose_with_covariance.pose.position.x, radar.pose_with_covariance.pose.position.y};
+    if (boost::geometry::within(radar_point, object_box)) {
+      outputs.emplace_back(radar_point);
+    }
+  }
+  return outputs;
 }
 
 std::vector<RadarFusionToDetectedObject::RadarInput>
@@ -243,9 +268,10 @@ Twist RadarFusionToDetectedObject::scaleTwist(const Twist & twist, const double 
 
 double RadarFusionToDetectedObject::getTwistNorm(const Twist & twist)
 {
-  return std::sqrt(
+  double output = std::sqrt(
     twist.linear.x * twist.linear.x + twist.linear.y * twist.linear.y +
     twist.linear.z * twist.linear.z);
+  return output;
 }
 
 Twist RadarFusionToDetectedObject::sumTwist(const std::vector<Twist> & twists)
@@ -259,35 +285,31 @@ Twist RadarFusionToDetectedObject::sumTwist(const std::vector<Twist> & twists)
 
 }  // namespace radar_fusion_to_detected_object
 
-/*
-
-std::vector<RadarInput> RadarFusionToDetectedObject::filterRadarWithinObject(
-  const autoware_perception_msgs::DynamicObjectWithFeature & object,
-  const std::vector<RadarInput> & radars)
+namespace tier4_autoware_utils
 {
-  std::vector<RadarInput> filtered_radars;
-  autoware_utils::Point2d object_size{
-    object.object.shape.dimensions.x, object.object.shape.dimensions.y};
-  autoware_utils::LinearRing2d object_box =
-    autoware_utils::createObject2d(object_size, param_.bounding_box_margin);
-  object_box = autoware_utils::transformVector(
-    object_box, autoware_utils::pose2transform(object.object.state.pose_covariance.pose));
-  ROS_DEBUG(
-    "object box 0 x: %f, y: %f, object box 1 x: %f, y: %f", object_box.at(0).x(),
-    object_box.at(0).y(), object_box.at(1).x(), object_box.at(1).y());
-  for (const auto & ra : radars) {
-    autoware_utils::Point2d radar_point{ra.pose.position.x, ra.pose.position.y};
-    if (boost::geometry::within(radar_point, object_box)) {
-      filtered_radars.push_back(ra);
-    }
-  }
-  // remove the radar data whose frame_id is lower than the most
-  // [TODO] frame id filter
-  // std::string frame_id = radars.at(0).header.frame_id;
-  return filtered_radars;
-}
 
+using tier4_autoware_utils::LinearRing2d;
+using tier4_autoware_utils::Point2d;
+
+inline LinearRing2d createObject2d(const Point2d object_size, const double margin = 0.0)
+{
+  const double x_front = object_size.x() / 2.0 + margin;
+  const double x_rear = -object_size.x() / 2.0 - margin;
+  const double y_left = object_size.y() / 2.0 + margin;
+  const double y_right = -object_size.y() / 2.0 - margin;
+
+  autoware_utils::LinearRing2d box;
+  box.push_back(Point2d{x_front, y_left});
+  box.push_back(Point2d{x_front, y_right});
+  box.push_back(Point2d{x_rear, y_right});
+  box.push_back(Point2d{x_rear, y_left});
+  box.push_back(Point2d{x_front, y_left});
+
+  return box;
 }
+}  // namespace tier4_autoware_utils
+
+/*
 
 autoware_perception_msgs::DynamicObjectWithFeature RadarFusionToDetectedObject::mergeDoppler(
   const autoware_perception_msgs::DynamicObjectWithFeature & object, const double velocity,
