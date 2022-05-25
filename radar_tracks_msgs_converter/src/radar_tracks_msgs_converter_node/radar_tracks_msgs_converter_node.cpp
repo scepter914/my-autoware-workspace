@@ -128,7 +128,7 @@ void RadarTracksMsgsConverterNode::onTimer()
   }
   if (radar_data_) {
     const auto & header = radar_data_->header;
-    transform_ = *transform_listener_->getTransform(
+    transform_ = transform_listener_->getTransform(
       node_param_.new_frame_id, header.frame_id, header.stamp,
       rclcpp::Duration::from_seconds(0.01));
   } else {
@@ -165,17 +165,12 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects(
 
     kinematics.pose_with_covariance.pose.position = radar_track.position;
 
-    RCLCPP_INFO(get_logger(), "%f: before", kinematics.pose_with_covariance.pose.position.x);
-    RCLCPP_INFO(get_logger(), "%f: before", transform_.transform.translation.x);
-
     // convert by tf
     geometry_msgs::msg::PoseStamped radar_pose_stamped{};
     radar_pose_stamped.pose.position = radar_track.position;
     geometry_msgs::msg::PoseStamped transformed_pose_stamped{};
-    tf2::doTransform(radar_pose_stamped, transformed_pose_stamped, transform_);
+    tf2::doTransform(radar_pose_stamped, transformed_pose_stamped, *transform_);
     kinematics.pose_with_covariance.pose = transformed_pose_stamped.pose;
-
-    RCLCPP_INFO(get_logger(), "%f: after", kinematics.pose_with_covariance.pose.position.x);
 
     kinematics.pose_with_covariance.covariance[0] = radar_track.position_covariance[0];
     kinematics.pose_with_covariance.covariance[1] = radar_track.position_covariance[1];

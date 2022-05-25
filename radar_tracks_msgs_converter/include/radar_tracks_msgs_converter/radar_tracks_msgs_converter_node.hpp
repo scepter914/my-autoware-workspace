@@ -61,8 +61,7 @@ private:
 
   // Data Buffer
   RadarTracks::ConstSharedPtr radar_data_{};
-  // geometry_msgs::msg::TransformStamped::ConstSharedPtr transform_;
-  geometry_msgs::msg::TransformStamped transform_;
+  geometry_msgs::msg::TransformStamped::ConstSharedPtr transform_;
 
   // Publisher
   rclcpp::Publisher<TrackedObjects>::SharedPtr pub_data_{};
