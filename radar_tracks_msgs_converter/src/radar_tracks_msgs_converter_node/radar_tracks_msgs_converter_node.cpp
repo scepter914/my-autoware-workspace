@@ -14,6 +14,9 @@
 
 #include "radar_tracks_msgs_converter/radar_tracks_msgs_converter_node.hpp"
 
+#include <tf2/utils.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -55,12 +58,14 @@ RadarTracksMsgsConverterNode::RadarTracksMsgsConverterNode(const rclcpp::NodeOpt
 
   // Node Parameter
   node_param_.update_rate_hz = declare_parameter<double>("update_rate_hz", 20.0);
+  node_param_.new_frame_id = declare_parameter<std::string>("new_frame_id", "base_link");
   node_param_.use_twist_compensation = declare_parameter<bool>("use_twist_compensation", false);
 
   // Subscriber
   sub_data_ = create_subscription<RadarTracks>(
     "~/input/radar_objects", rclcpp::QoS{1},
     std::bind(&RadarTracksMsgsConverterNode::onData, this, _1));
+  transform_listener_ = std::make_shared<tier4_autoware_utils::TransformListener>(this);
 
   // Publisher
   pub_data_ = create_publisher<TrackedObjects>("~/output/radar_objects", 1);
@@ -121,6 +126,15 @@ void RadarTracksMsgsConverterNode::onTimer()
   if (!isDataReady()) {
     return;
   }
+  if (radar_data_) {
+    const auto & header = radar_data_->header;
+    transform_ = *transform_listener_->getTransform(
+      node_param_.new_frame_id, header.frame_id, header.stamp,
+      rclcpp::Duration::from_seconds(0.01));
+  } else {
+    RCLCPP_INFO(get_logger(), "Exit transform");
+    return;
+  }
 
   TrackedObjects tracked_objects = convertRadarTrackToTrackedObjects(radar_data_);
   if (!tracked_objects.objects.empty()) {
@@ -133,7 +147,9 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects(
 {
   TrackedObjects tracked_objects;
   tracked_objects.header = radar_tracks->header;
-  for (const auto & radar_track : radar_tracks->tracks) {
+  tracked_objects.header.frame_id = node_param_.new_frame_id;
+
+  for (auto & radar_track : radar_tracks->tracks) {
     TrackedObject tracked_object;
 
     tracked_object.object_id = radar_track.uuid;
@@ -148,6 +164,19 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects(
     kinematics.is_stationary = false;
 
     kinematics.pose_with_covariance.pose.position = radar_track.position;
+
+    RCLCPP_INFO(get_logger(), "%f: before", kinematics.pose_with_covariance.pose.position.x);
+    RCLCPP_INFO(get_logger(), "%f: before", transform_.transform.translation.x);
+
+    // convert by tf
+    geometry_msgs::msg::PoseStamped radar_pose_stamped{};
+    radar_pose_stamped.pose.position = radar_track.position;
+    geometry_msgs::msg::PoseStamped transformed_pose_stamped{};
+    tf2::doTransform(radar_pose_stamped, transformed_pose_stamped, transform_);
+    kinematics.pose_with_covariance.pose = transformed_pose_stamped.pose;
+
+    RCLCPP_INFO(get_logger(), "%f: after", kinematics.pose_with_covariance.pose.position.x);
+
     kinematics.pose_with_covariance.covariance[0] = radar_track.position_covariance[0];
     kinematics.pose_with_covariance.covariance[1] = radar_track.position_covariance[1];
     kinematics.pose_with_covariance.covariance[2] = radar_track.position_covariance[2];
@@ -213,9 +242,10 @@ uint8_t RadarTracksMsgsConverterNode::convertClassification(const uint16_t class
   } else {
     RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "Receive unknown label for RadarTracks");
     return ObjectClassification::UNKNOWN;
-  }  // namespace radar_tracks_msgs_converter
+  }
 }
+
+}  // namespace radar_tracks_msgs_converter
 
 #include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(radar_tracks_msgs_converter::RadarTracksMsgsConverterNode)
-}  // namespace radar_tracks_msgs_converter

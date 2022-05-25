@@ -12,3 +12,10 @@ This package convert from [radar_msgs/msg/RadarTracks](https://github.com/ros-pe
   - `~/output/radar_objects` (autoware_auto_perception_msgs/msg/TrackedObject.msg): Converted topic
 
 ### Parameters
+
+- `update_rate_hz` (double)
+  - Default parameter is 20.0
+- `new_frame_id` (std::string)
+  - Default parameter is "base_link"
+- `use_twist_compensation` (bool)
+  - Default parameter is "false"

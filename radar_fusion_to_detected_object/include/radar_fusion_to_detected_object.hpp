@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_HPP__
-#define RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_HPP__
+#ifndef RADAR_FUSION_TO_DETECTED_OBJECT_HPP__
+#define RADAR_FUSION_TO_DETECTED_OBJECT_HPP__
 
 #include "rclcpp/logger.hpp"
 #include "tier4_autoware_utils/tier4_autoware_utils.hpp"
@@ -124,4 +124,4 @@ inline LinearRing2d createObject2d(const Point2d object_size, const double margi
 }
 }  // namespace tier4_autoware_utils
 
-#endif  // RADAR_FUSION_TO_DETECTED_OBJECT__RADAR_FUSION_TO_DETECTED_OBJECT_HPP__
+#endif

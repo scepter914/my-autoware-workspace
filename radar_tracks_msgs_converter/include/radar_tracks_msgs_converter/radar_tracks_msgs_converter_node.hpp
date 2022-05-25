@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// #ifndef RADAR_TRACKS_MSGS_CONVERTER__RADAR_TRACKS_MSGS_CONVERTER_NODE_HPP__
-// #define RADAR_TRACKS_MSGS_CONVERTER__RADAR_TRACKS_MSGS_CONVERTER_NODE_HPP__
+#ifndef RADAR_TRACKS_MSGS_CONVERTER__RADAR_TRACKS_MSGS_CONVERTER_NODE_HPP__
+#define RADAR_TRACKS_MSGS_CONVERTER__RADAR_TRACKS_MSGS_CONVERTER_NODE_HPP__
 
 #include "rclcpp/rclcpp.hpp"
+#include "tier4_autoware_utils/tier4_autoware_utils.hpp"
 
 #include "autoware_auto_perception_msgs/msg/object_classification.hpp"
 #include "autoware_auto_perception_msgs/msg/shape.hpp"
@@ -46,18 +47,22 @@ public:
   struct NodeParam
   {
     double update_rate_hz{};
+    std::string new_frame_id{};
     bool use_twist_compensation{};
   };
 
 private:
   // Subscriber
   rclcpp::Subscription<RadarTracks>::SharedPtr sub_data_{};
+  std::shared_ptr<tier4_autoware_utils::TransformListener> transform_listener_;
 
   // Callback
   void onData(const RadarTracks::ConstSharedPtr msg);
 
   // Data Buffer
   RadarTracks::ConstSharedPtr radar_data_{};
+  // geometry_msgs::msg::TransformStamped::ConstSharedPtr transform_;
+  geometry_msgs::msg::TransformStamped transform_;
 
   // Publisher
   rclcpp::Publisher<TrackedObjects>::SharedPtr pub_data_{};
@@ -83,7 +88,4 @@ private:
 
 }  // namespace radar_tracks_msgs_converter
 
-#include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(radar_tracks_msgs_converter::RadarTracksMsgsConverterNode)
-
-// #endif
+#endif  // RADAR_TRACKS_MSGS_CONVERTER__RADAR_TRACKS_MSGS_CONVERTER_NODE_HPP__
