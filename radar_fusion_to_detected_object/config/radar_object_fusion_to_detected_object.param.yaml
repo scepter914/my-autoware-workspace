@@ -1,0 +1,14 @@
+/**:
+  ros__parameters:
+    node_params:
+      update_rate_hz: 10.0
+
+    core_params:
+      bounding_box_margin: 0.5
+      split_threshold_velocity: 0.0
+      velocity_weight_average: 0.0
+      velocity_weight_median: 0.0
+      velocity_weight_target_value_average: 0.0
+      velocity_weight_target_value_top: 1.0
+      convert_doppler_to_twist: false
+      threshold_probability: 0.0
