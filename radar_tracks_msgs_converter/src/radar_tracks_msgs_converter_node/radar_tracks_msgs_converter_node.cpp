@@ -132,7 +132,7 @@ void RadarTracksMsgsConverterNode::onTimer()
       node_param_.new_frame_id, header.frame_id, header.stamp,
       rclcpp::Duration::from_seconds(0.01));
   } else {
-    RCLCPP_INFO(get_logger(), "Exit transform");
+    RCLCPP_INFO(get_logger(), "Cannot get Transform");
     return;
   }
 
@@ -163,8 +163,6 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects(
     kinematics.orientation_availability = TrackedObjectKinematics::AVAILABLE;
     kinematics.is_stationary = false;
 
-    kinematics.pose_with_covariance.pose.position = radar_track.position;
-
     // convert by tf
     geometry_msgs::msg::PoseStamped radar_pose_stamped{};
     radar_pose_stamped.pose.position = radar_track.position;
@@ -182,7 +180,13 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects(
     kinematics.pose_with_covariance.covariance[13] = radar_track.position_covariance[4];
     kinematics.pose_with_covariance.covariance[14] = radar_track.position_covariance[5];
 
-    kinematics.twist_with_covariance.twist.linear = radar_track.velocity;
+    // convert by tf
+    geometry_msgs::msg::Vector3Stamped radar_velocity_stamped{};
+    radar_velocity_stamped.vector = radar_track.velocity;
+    geometry_msgs::msg::Vector3Stamped transformed_vector3_stamped{};
+    tf2::doTransform(radar_velocity_stamped, transformed_vector3_stamped, *transform_);
+    kinematics.twist_with_covariance.twist.linear = transformed_vector3_stamped.vector;
+
     kinematics.twist_with_covariance.covariance[0] = radar_track.velocity_covariance[0];
     kinematics.twist_with_covariance.covariance[1] = radar_track.velocity_covariance[1];
     kinematics.twist_with_covariance.covariance[2] = radar_track.velocity_covariance[2];
