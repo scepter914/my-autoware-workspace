@@ -76,7 +76,7 @@ RadarObjectFusionToDetectedObjectNode::RadarObjectFusionToDetectedObjectNode(
   core_param_.convert_doppler_to_twist =
     declare_parameter<bool>("core_params.convert_doppler_to_twist", false);
   core_param_.threshold_probability =
-    declare_parameter<double>("core_params.threshold_probability", 0.0);
+    declare_parameter<float>("core_params.threshold_probability", 0.0);
 
   // Core
   radar_fusion_to_detected_object_ = std::make_unique<RadarFusionToDetectedObject>(get_logger());

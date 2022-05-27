@@ -90,6 +90,8 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
 
       // Delete objects with low probability
       if (isQualified(split_object, radars_within_split_object)) {
+        split_object.classification.at(0).probability =
+          std::max(split_object.classification.at(0).probability, param_.threshold_probability);
         output.objects.objects.emplace_back(split_object);
       }
     }
@@ -273,19 +275,3 @@ Twist RadarFusionToDetectedObject::sumTwist(const std::vector<Twist> & twists)
 }
 
 }  // namespace radar_fusion_to_detected_object
-
-/*
-
-autoware_perception_msgs::DynamicObjectWithFeature RadarFusionToDetectedObject::mergeDoppler(
-  const autoware_perception_msgs::DynamicObjectWithFeature & object, const double velocity,
-  const double yaw)
-{
-  autoware_perception_msgs::DynamicObjectWithFeature output;
-  output = object;
-  output.object.state.twist_reliable = param_.with_twist_reliable;
-  output.object.state.twist_covariance.twist.linear.x = velocity * std::cos(yaw);
-  output.object.state.twist_covariance.twist.linear.y = velocity * std::sin(yaw);
-
-  return output;
-}
-*/
