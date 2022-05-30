@@ -51,7 +51,7 @@ using autoware_auto_perception_msgs::msg::TrackedObjects;
 
 RadarObjectFusionToDetectedObjectNode::RadarObjectFusionToDetectedObjectNode(
   const rclcpp::NodeOptions & node_options)
-: Node("radar_fusion_to_detected_object", node_options)
+: Node("radar_object_fusion_to_detected_object", node_options)
 {
   // Parameter Server
   set_param_res_ = this->add_on_set_parameters_callback(
@@ -86,7 +86,6 @@ RadarObjectFusionToDetectedObjectNode::RadarObjectFusionToDetectedObjectNode(
   sub_object_ = create_subscription<DetectedObjects>(
     "~/input/objects", rclcpp::QoS{1},
     std::bind(&RadarObjectFusionToDetectedObjectNode::onDetectedObjects, this, _1));
-
   sub_radar_ = create_subscription<TrackedObjects>(
     "~/input/radars", rclcpp::QoS{1},
     std::bind(&RadarObjectFusionToDetectedObjectNode::onRadarObjects, this, _1));

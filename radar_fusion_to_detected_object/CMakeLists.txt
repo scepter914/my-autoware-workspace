@@ -23,7 +23,7 @@ ament_auto_add_library(radar_object_fusion_to_detected_object_node_component SHA
 )
 
 rclcpp_components_register_node(radar_object_fusion_to_detected_object_node_component
-  PLUGIN "radar_object_fusion_to_detected_object::RadarFusionToDetectedObjectNode"
+  PLUGIN "radar_fusion_to_detected_object::RadarObjectFusionToDetectedObjectNode"
   EXECUTABLE radar_object_fusion_to_detected_object_node
 )
 
