@@ -7,7 +7,7 @@ This package convert from [radar_msgs/msg/RadarTracks](https://github.com/ros-pe
 
 - Input
   - `~/input/radar_objects` (radar_msgs/msg/RadarTracks.msg): Converted topic
-  - `~/input/twist`
+  - `~/input/twist` (geometry_msgs/msg/TwistStamped.msg): Ego vehicle twist
 - Output
   - `~/output/radar_objects` (autoware_auto_perception_msgs/msg/TrackedObject.msg): Converted topic
 
