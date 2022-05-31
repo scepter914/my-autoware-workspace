@@ -109,8 +109,7 @@ RadarFusionToDetectedObject::filterRadarWithinObject(
   std::vector<RadarInput> outputs{};
 
   tier4_autoware_utils::Point2d object_size{object.shape.dimensions.x, object.shape.dimensions.y};
-  LinearRing2d object_box =
-    tier4_autoware_utils::createObject2d(object_size, param_.bounding_box_margin);
+  LinearRing2d object_box = createObject2dWithMargin(object_size, param_.bounding_box_margin);
   object_box = tier4_autoware_utils::transformVector(
     object_box, tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
 
@@ -293,4 +292,21 @@ Twist RadarFusionToDetectedObject::sumTwist(const std::vector<Twist> & twists)
   return output;
 }
 
+LinearRing2d RadarFusionToDetectedObject::createObject2dWithMargin(
+  const Point2d object_size, const double margin)
+{
+  const double x_front = object_size.x() / 2.0 + margin;
+  const double x_rear = -object_size.x() / 2.0 - margin;
+  const double y_left = object_size.y() / 2.0 + margin;
+  const double y_right = -object_size.y() / 2.0 - margin;
+
+  LinearRing2d box{};
+  box.push_back(Point2d{x_front, y_left});
+  box.push_back(Point2d{x_front, y_right});
+  box.push_back(Point2d{x_rear, y_right});
+  box.push_back(Point2d{x_rear, y_left});
+  box.push_back(Point2d{x_front, y_left});
+
+  return box;
+}
 }  // namespace radar_fusion_to_detected_object

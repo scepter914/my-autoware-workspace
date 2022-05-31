@@ -99,30 +99,8 @@ private:
   Twist scaleTwist(const Twist & twist, const double scale);
   double getTwistNorm(const Twist & twist);
   Twist sumTwist(const std::vector<Twist> & twists);
+  LinearRing2d createObject2dWithMargin(const Point2d object_size, const double margin);
 };
 }  // namespace radar_fusion_to_detected_object
-
-namespace tier4_autoware_utils
-{
-using tier4_autoware_utils::LinearRing2d;
-using tier4_autoware_utils::Point2d;
-
-inline LinearRing2d createObject2d(const Point2d object_size, const double margin = 0.0)
-{
-  const double x_front = object_size.x() / 2.0 + margin;
-  const double x_rear = -object_size.x() / 2.0 - margin;
-  const double y_left = object_size.y() / 2.0 + margin;
-  const double y_right = -object_size.y() / 2.0 - margin;
-
-  LinearRing2d box{};
-  box.push_back(Point2d{x_front, y_left});
-  box.push_back(Point2d{x_front, y_right});
-  box.push_back(Point2d{x_rear, y_right});
-  box.push_back(Point2d{x_rear, y_left});
-  box.push_back(Point2d{x_front, y_left});
-
-  return box;
-}
-}  // namespace tier4_autoware_utils
 
 #endif
