@@ -23,6 +23,7 @@
 #include "autoware_auto_perception_msgs/msg/tracked_object.hpp"
 #include "autoware_auto_perception_msgs/msg/tracked_object_kinematics.hpp"
 #include "autoware_auto_perception_msgs/msg/tracked_objects.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 #include "radar_msgs/msg/radar_tracks.hpp"
 
 #include <chrono>
@@ -37,6 +38,7 @@ using autoware_auto_perception_msgs::msg::Shape;
 using autoware_auto_perception_msgs::msg::TrackedObject;
 using autoware_auto_perception_msgs::msg::TrackedObjectKinematics;
 using autoware_auto_perception_msgs::msg::TrackedObjects;
+using geometry_msgs::msg::TwistStamped;
 using radar_msgs::msg::RadarTracks;
 
 class RadarTracksMsgsConverterNode : public rclcpp::Node
@@ -53,18 +55,21 @@ public:
 
 private:
   // Subscriber
-  rclcpp::Subscription<RadarTracks>::SharedPtr sub_data_{};
+  rclcpp::Subscription<RadarTracks>::SharedPtr sub_radar_{};
+  rclcpp::Subscription<TwistStamped>::SharedPtr sub_twist_{};
   std::shared_ptr<tier4_autoware_utils::TransformListener> transform_listener_;
 
   // Callback
-  void onData(const RadarTracks::ConstSharedPtr msg);
+  void onRadarTracks(const RadarTracks::ConstSharedPtr msg);
+  void onTwist(const TwistStamped::ConstSharedPtr msg);
 
   // Data Buffer
   RadarTracks::ConstSharedPtr radar_data_{};
+  TwistStamped::ConstSharedPtr twist_data_{};
   geometry_msgs::msg::TransformStamped::ConstSharedPtr transform_;
 
   // Publisher
-  rclcpp::Publisher<TrackedObjects>::SharedPtr pub_data_{};
+  rclcpp::Publisher<TrackedObjects>::SharedPtr pub_radar_{};
 
   // Timer
   rclcpp::TimerBase::SharedPtr timer_{};
@@ -81,7 +86,7 @@ private:
   NodeParam node_param_{};
 
   // Core
-  TrackedObjects convertRadarTrackToTrackedObjects(const RadarTracks::ConstSharedPtr radar_tracks);
+  TrackedObjects convertRadarTrackToTrackedObjects();
   uint8_t convertClassification(const uint16_t classification);
 };
 

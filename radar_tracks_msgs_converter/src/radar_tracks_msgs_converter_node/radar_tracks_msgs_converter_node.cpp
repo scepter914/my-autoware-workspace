@@ -62,13 +62,15 @@ RadarTracksMsgsConverterNode::RadarTracksMsgsConverterNode(const rclcpp::NodeOpt
   node_param_.use_twist_compensation = declare_parameter<bool>("use_twist_compensation", false);
 
   // Subscriber
-  sub_data_ = create_subscription<RadarTracks>(
+  sub_radar_ = create_subscription<RadarTracks>(
     "~/input/radar_objects", rclcpp::QoS{1},
-    std::bind(&RadarTracksMsgsConverterNode::onData, this, _1));
+    std::bind(&RadarTracksMsgsConverterNode::onRadarTracks, this, _1));
+  sub_twist_ = create_subscription<TwistStamped>(
+    "~/input/twist", rclcpp::QoS{1}, std::bind(&RadarTracksMsgsConverterNode::onTwist, this, _1));
   transform_listener_ = std::make_shared<tier4_autoware_utils::TransformListener>(this);
 
   // Publisher
-  pub_data_ = create_publisher<TrackedObjects>("~/output/radar_objects", 1);
+  pub_radar_ = create_publisher<TrackedObjects>("~/output/radar_objects", 1);
 
   // Timer
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
@@ -76,9 +78,14 @@ RadarTracksMsgsConverterNode::RadarTracksMsgsConverterNode(const rclcpp::NodeOpt
     this, get_clock(), update_period_ns, std::bind(&RadarTracksMsgsConverterNode::onTimer, this));
 }
 
-void RadarTracksMsgsConverterNode::onData(const RadarTracks::ConstSharedPtr msg)
+void RadarTracksMsgsConverterNode::onRadarTracks(const RadarTracks::ConstSharedPtr msg)
 {
   radar_data_ = msg;
+}
+
+void RadarTracksMsgsConverterNode::onTwist(const TwistStamped::ConstSharedPtr msg)
+{
+  twist_data_ = msg;
 }
 
 rcl_interfaces::msg::SetParametersResult RadarTracksMsgsConverterNode::onSetParam(
@@ -114,7 +121,7 @@ rcl_interfaces::msg::SetParametersResult RadarTracksMsgsConverterNode::onSetPara
 bool RadarTracksMsgsConverterNode::isDataReady()
 {
   if (!radar_data_) {
-    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for data msg...");
+    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for radar msg...");
     return false;
   }
 
@@ -126,30 +133,23 @@ void RadarTracksMsgsConverterNode::onTimer()
   if (!isDataReady()) {
     return;
   }
-  if (radar_data_) {
-    const auto & header = radar_data_->header;
-    transform_ = transform_listener_->getTransform(
-      node_param_.new_frame_id, header.frame_id, header.stamp,
-      rclcpp::Duration::from_seconds(0.01));
-  } else {
-    RCLCPP_INFO(get_logger(), "Cannot get Transform");
-    return;
-  }
+  const auto & header = radar_data_->header;
+  transform_ = transform_listener_->getTransform(
+    node_param_.new_frame_id, header.frame_id, header.stamp, rclcpp::Duration::from_seconds(0.01));
 
-  TrackedObjects tracked_objects = convertRadarTrackToTrackedObjects(radar_data_);
+  TrackedObjects tracked_objects = convertRadarTrackToTrackedObjects();
   if (!tracked_objects.objects.empty()) {
-    pub_data_->publish(tracked_objects);
+    pub_radar_->publish(tracked_objects);
   }
 }
 
-TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects(
-  const RadarTracks::ConstSharedPtr radar_tracks)
+TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects()
 {
   TrackedObjects tracked_objects;
-  tracked_objects.header = radar_tracks->header;
+  tracked_objects.header = radar_data_->header;
   tracked_objects.header.frame_id = node_param_.new_frame_id;
 
-  for (auto & radar_track : radar_tracks->tracks) {
+  for (auto & radar_track : radar_data_->tracks) {
     TrackedObject tracked_object;
 
     tracked_object.object_id = radar_track.uuid;
@@ -186,6 +186,17 @@ TrackedObjects RadarTracksMsgsConverterNode::convertRadarTrackToTrackedObjects(
     geometry_msgs::msg::Vector3Stamped transformed_vector3_stamped{};
     tf2::doTransform(radar_velocity_stamped, transformed_vector3_stamped, *transform_);
     kinematics.twist_with_covariance.twist.linear = transformed_vector3_stamped.vector;
+
+    // twist compensation
+    if (node_param_.use_twist_compensation) {
+      if (twist_data_) {
+        kinematics.twist_with_covariance.twist.linear.x += twist_data_->twist.linear.x;
+        kinematics.twist_with_covariance.twist.linear.y += twist_data_->twist.linear.y;
+        kinematics.twist_with_covariance.twist.linear.z += twist_data_->twist.linear.z;
+      } else {
+        RCLCPP_INFO(get_logger(), "Twist data is not coming");
+      }
+    }
 
     kinematics.twist_with_covariance.covariance[0] = radar_track.velocity_covariance[0];
     kinematics.twist_with_covariance.covariance[1] = radar_track.velocity_covariance[1];
