@@ -4,8 +4,8 @@
       update_rate_hz: 10.0
 
     core_params:
-      bounding_box_margin: 1.0
-      split_threshold_velocity: 0.0
+      bounding_box_margin: 2.0
+      split_threshold_velocity: 5.0
       velocity_weight_average: 0.0
       velocity_weight_median: 0.0
       velocity_weight_min_distance: 1.0

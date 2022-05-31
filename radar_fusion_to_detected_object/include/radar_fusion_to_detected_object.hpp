@@ -56,7 +56,7 @@ public:
     double velocity_weight_target_value_average{};
     double velocity_weight_target_value_top{};
 
-    // Parameters for fixing object information
+    // Parameters for fixed object information
     bool convert_doppler_to_twist{};
     float threshold_probability{};
   };

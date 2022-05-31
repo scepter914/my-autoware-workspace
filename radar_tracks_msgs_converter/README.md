@@ -16,9 +16,9 @@ This package convert from [radar_msgs/msg/RadarTracks](https://github.com/ros-pe
 
 ### Parameters
 
-- `update_rate_hz` (double)
+- `update_rate_hz` (double): The update rate [hz].
   - Default parameter is 20.0
-- `new_frame_id` (std::string)
+- `new_frame_id` (string): The header frame of output topic.
   - Default parameter is "base_link"
-- `use_twist_compensation` (bool)
+- `use_twist_compensation` (bool): If the parameter is true, then the twist of output objects' topic is compensated by ego vehicle motion.
   - Default parameter is "false"

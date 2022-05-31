@@ -2,7 +2,7 @@
 ## Common Algorithm
 ### 1. Link between 3d bounding box and radar data
 
-Choose radar pointcloud/objects within 3d bounding box from lidar-base detection with margin space from bird eye view.
+Choose radar pointcloud/objects within 3D bounding box from lidar-base detection with margin space from bird's-eye view.
 
 ![choose_radar](radar_fusion_to_detected_object_1.drawio.svg)
 
