@@ -52,6 +52,7 @@ public:
     // Weight param for velocity estimation
     double velocity_weight_average{};
     double velocity_weight_median{};
+    double velocity_weight_min_distance{};
     double velocity_weight_target_value_average{};
     double velocity_weight_target_value_top{};
 

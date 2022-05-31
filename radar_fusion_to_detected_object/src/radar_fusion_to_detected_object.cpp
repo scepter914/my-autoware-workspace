@@ -39,15 +39,18 @@ void RadarFusionToDetectedObject::setParam(const Param & param)
   param_.split_threshold_velocity = param.split_threshold_velocity;
 
   // normalize weight param
-  double sum_weight = param.velocity_weight_median + param.velocity_weight_average +
-                      param.velocity_weight_target_value_average +
+  double sum_weight = param.velocity_weight_median + param.velocity_weight_min_distance +
+                      param.velocity_weight_average + param.velocity_weight_target_value_average +
                       param.velocity_weight_target_value_top;
+
   if (sum_weight < 0.01) {
-    param_.velocity_weight_median = 1.0;
+    param_.velocity_weight_min_distance = 1.0;
+    param_.velocity_weight_median = 0.0;
     param_.velocity_weight_average = 0.0;
     param_.velocity_weight_target_value_average = 0.0;
     param_.velocity_weight_target_value_top = 0.0;
   } else {
+    param_.velocity_weight_min_distance = param.velocity_weight_min_distance / sum_weight;
     param_.velocity_weight_median = param.velocity_weight_median / sum_weight;
     param_.velocity_weight_average = param.velocity_weight_average / sum_weight;
     param_.velocity_weight_target_value_average =
@@ -138,7 +141,22 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
     return twist_with_covariance;
   }
 
-  // calculate median
+  // calculate twist for radar data with min distance
+  Twist twist_min_distance{};
+  if (param_.velocity_weight_min_distance > 0.0) {
+    auto comp_func = [&](const RadarInput & a, const RadarInput & b) {
+      return tier4_autoware_utils::calcSquaredDistance2d(
+               a.pose_with_covariance.pose.position,
+               object.kinematics.pose_with_covariance.pose.position) <
+             tier4_autoware_utils::calcSquaredDistance2d(
+               b.pose_with_covariance.pose.position,
+               object.kinematics.pose_with_covariance.pose.position);
+    };
+    auto iter = std::min_element(std::begin(radars), std::end(radars), comp_func);
+    twist_min_distance = iter->twist_with_covariance.twist;
+  }
+
+  // calculate twist for radar data with median twist
   Twist twist_median{};
   if (param_.velocity_weight_median > 0.0) {
     auto ascending_func = [&](const RadarInput & a, const RadarInput & b) {
@@ -161,7 +179,7 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
     }
   }
 
-  // calculate average
+  // calculate twist for radar data with average twist
   Twist twist_average{};
   if (param_.velocity_weight_average > 0.0) {
     for (const auto & radar : radars) {
@@ -170,7 +188,7 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
     twist_average = scaleTwist(twist_average, (1.0 / radars.size()));
   }
 
-  // calculate top target_value
+  // calculate twist for radar data with top target value
   Twist twist_top_target_value{};
   if (param_.velocity_weight_target_value_top > 0.0) {
     auto comp_func = [](const RadarInput & a, const RadarInput & b) {
@@ -180,7 +198,7 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
     twist_top_target_value = iter->twist_with_covariance.twist;
   }
 
-  // calculate target_value * average
+  // calculate twist for radar data with target_value * average
   Twist twist_target_value_average{};
   double sum_target_value = 0.0;
   if (param_.velocity_weight_target_value_average > 0.0) {
@@ -195,6 +213,7 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
 
   // estimate doppler velocity with cost weight
   std::vector<Twist> weight_twists{};
+  weight_twists.emplace_back(scaleTwist(twist_min_distance, param_.velocity_weight_min_distance));
   weight_twists.emplace_back(scaleTwist(twist_median, param_.velocity_weight_median));
   weight_twists.emplace_back(scaleTwist(twist_average, param_.velocity_weight_average));
   weight_twists.emplace_back(
