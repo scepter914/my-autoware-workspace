@@ -2,6 +2,9 @@
 
 This package convert from [radar_msgs/msg/RadarTracks](https://github.com/ros-perception/radar_msgs/blob/ros2/msg/RadarTracks.msg) into [autoware_auto_perception_msgs/msg/TrackedObject](https://gitlab.com/autowarefoundation/autoware.auto/autoware_auto_msgs/-/blob/master/autoware_auto_perception_msgs/msg/TrackedObject.idl).
 
+- Calculation cost is O(n).
+  - n: The number of radar objects
+
 ## Design
 ### Input / Output
 
