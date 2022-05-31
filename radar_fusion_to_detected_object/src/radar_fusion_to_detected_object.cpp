@@ -247,7 +247,7 @@ bool RadarFusionToDetectedObject::isQualified(
 TwistWithCovariance RadarFusionToDetectedObject::convertDopplerToTwist(
   const DetectedObject & object, const TwistWithCovariance & twist_with_covariance)
 {
-  // [TODO] implement for radar pointcloud fusion
+  // [TODO] (Satoshi Tanaka) Implement for radar pointcloud fusion
   std::cout << "debug" << object.classification.at(0).probability << std::endl;
   return twist_with_covariance;
 }

@@ -193,7 +193,6 @@ void RadarObjectFusionToDetectedObjectNode::onTimer()
 
   // Set input data
   RadarFusionToDetectedObject::Input input{};
-
   input.objects = *detected_objects_;
   for (const auto & radar_object_ : radar_objects_->objects) {
     input.radars.emplace_back(setRadarInput(radar_object_, radar_objects_->header));
@@ -201,12 +200,7 @@ void RadarObjectFusionToDetectedObjectNode::onTimer()
 
   // Update
   output_ = radar_fusion_to_detected_object_->update(input);
-
-  // Sample
   pub_objects_->publish(output_.objects);
-  // RCLCPP_INFO(
-  //   get_logger(), "input size, output size: %d, %d", (int)input_.radars.size(),
-  //   (int)output_.objects.size());
 }
 
 RadarFusionToDetectedObject::RadarInput RadarObjectFusionToDetectedObjectNode::setRadarInput(
