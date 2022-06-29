@@ -72,7 +72,7 @@ public:
   struct Input
   {
     std::vector<std::shared_ptr<RadarInput>> radars{};
-    DetectedObjects::SharedPtr objects{};
+    DetectedObjects::ConstSharedPtr objects{};
   };
 
   struct Output
@@ -87,7 +87,7 @@ private:
   rclcpp::Logger logger_;
   Param param_{};
   std::vector<std::shared_ptr<RadarInput>> filterRadarWithinObject(
-    DetectedObject & object, const std::vector<std::shared_ptr<RadarInput>> & radars);
+    const DetectedObject & object, const std::vector<std::shared_ptr<RadarInput>> & radars);
   std::vector<DetectedObject> splitObject(
     const DetectedObject & object, const std::vector<RadarInput> & radars);
   TwistWithCovariance estimateTwist(

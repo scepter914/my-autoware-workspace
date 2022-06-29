@@ -113,7 +113,7 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
 
 std::vector<std::shared_ptr<RadarFusionToDetectedObject::RadarInput>>
 RadarFusionToDetectedObject::filterRadarWithinObject(
-  DetectedObject & object,
+  const DetectedObject & object,
   const std::vector<std::shared_ptr<RadarFusionToDetectedObject::RadarInput>> & radars)
 {
   std::vector<std::shared_ptr<RadarInput>> outputs{};
@@ -168,10 +168,11 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
   // calculate twist for radar data with median twist
   Twist twist_median{};
   if (param_.velocity_weight_median > 0.0) {
-    auto ascending_func = [&](const RadarInput & a, const RadarInput & b) {
-      return getTwistNorm(a.twist_with_covariance.twist) <
-             getTwistNorm(b.twist_with_covariance.twist);
-    };
+    auto ascending_func =
+      [&](const std::shared_ptr<RadarInput> & a, const std::shared_ptr<RadarInput> & b) {
+        return getTwistNorm(a->twist_with_covariance.twist) <
+               getTwistNorm(b->twist_with_covariance.twist);
+      };
     std::sort(radars.begin(), radars.end(), ascending_func);
 
     if (radars.size() % 2 == 1) {
