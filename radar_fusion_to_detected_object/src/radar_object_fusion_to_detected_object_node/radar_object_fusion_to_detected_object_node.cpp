@@ -188,26 +188,55 @@ void RadarObjectFusionToDetectedObjectNode::onTimer()
     return;
   }
 
+  if (radar_objects_->objects.empty()) {
+    pub_objects_->publish(*detected_objects_);
+    return;
+  }
+
   // Set input data
   RadarFusionToDetectedObject::Input input{};
   input.objects = detected_objects_;
+
+  RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 0);
+
   for (const auto & radar_object_ : radar_objects_->objects) {
-    input.radars.emplace_back(setRadarInput(radar_object_, radar_objects_->header));
+    RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 1);
+    auto radar_ptr = setRadarInput(radar_object_, radar_objects_->header);
+
+    RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 2);
+    input.radars.emplace_back(radar_ptr);
   }
 
+  RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 3);
   // Update
   output_ = radar_fusion_to_detected_object_->update(input);
-  pub_objects_->publish(*output_.objects);
+
+  if (output_.objects) {
+    pub_objects_->publish(*output_.objects);
+  }
 }
 
-RadarFusionToDetectedObject::RadarInput RadarObjectFusionToDetectedObjectNode::setRadarInput(
-  TrackedObject radar_object, std_msgs::msg::Header header)
+std::shared_ptr<RadarFusionToDetectedObject::RadarInput>
+RadarObjectFusionToDetectedObjectNode::setRadarInput(
+  const TrackedObject & radar_object, std_msgs::msg::Header header_)
 {
-  RadarFusionToDetectedObject::RadarInput output{};
-  output.header = header;
-  output.pose_with_covariance = radar_object.kinematics.pose_with_covariance;
-  output.twist_with_covariance = radar_object.kinematics.twist_with_covariance;
-  output.target_value = radar_object.classification.at(0).probability;
+  RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 20);
+  std::shared_ptr<RadarFusionToDetectedObject::RadarInput> output{};
+  RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 21);
+  output->pose_with_covariance = radar_object.kinematics.pose_with_covariance;
+  RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 24);
+  output->twist_with_covariance = radar_object.kinematics.twist_with_covariance;
+  RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 25);
+  output->target_value = radar_object.classification.at(0).probability;
+  RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 26);
+  RCLCPP_INFO(
+    rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "header: %s",
+    header_.frame_id.c_str());
+  // output->header.stamp = header_.stamp;
+  output->header = std_msgs::msg::Header{};
+  RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 22);
+  output->header.frame_id = header_.frame_id;
+  RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 23);
   return output;
 }
 

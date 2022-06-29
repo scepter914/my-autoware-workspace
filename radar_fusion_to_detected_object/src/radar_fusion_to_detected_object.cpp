@@ -70,7 +70,13 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
   const RadarFusionToDetectedObject::Input & input)
 {
   RadarFusionToDetectedObject::Output output{};
+
+  RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 11);
   output.objects->header = input.objects->header;
+
+  if (input.objects->objects.empty()) {
+    return output;
+  }
 
   for (auto & object : input.objects->objects) {
     // Link between 3d bounding box and radar data
