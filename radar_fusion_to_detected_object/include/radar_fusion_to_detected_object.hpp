@@ -93,6 +93,9 @@ private:
   //   const DetectedObject & object, const std::shared_ptr<std::vector<RadarInput>> & radars);
   TwistWithCovariance estimateTwist(
     const DetectedObject & object, std::shared_ptr<std::vector<RadarInput>> & radars);
+  bool isWithinBoundingBox(
+    const RadarInput & radar, const Point & object_point, LinearRing2d & object_box,
+    double squared_search_distance);
   bool isQualified(
     const DetectedObject & object, std::shared_ptr<std::vector<RadarInput>> & radars);
   TwistWithCovariance convertDopplerToTwist(
