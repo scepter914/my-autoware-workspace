@@ -71,15 +71,13 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
 {
   RadarFusionToDetectedObject::Output output{};
 
-  RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 11);
-  output.objects->header = input.objects->header;
+  output.objects.header = input.objects->header;
 
   if (input.objects->objects.empty()) {
     return output;
   }
 
   for (auto & object : input.objects->objects) {
-    RCLCPP_INFO(rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 12);
     // Link between 3d bounding box and radar data
     std::vector<std::shared_ptr<RadarInput>> radars_within_object =
       filterRadarWithinObject(object, input.radars);
@@ -91,8 +89,6 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
     split_objects.emplace_back(object);
 
     for (auto & split_object : split_objects) {
-      RCLCPP_INFO(
-        rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 13);
       std::vector<std::shared_ptr<RadarInput>> radars_within_split_object;
       if (split_objects.size() == 1) {
         // If object is not split, radar data within object is same
@@ -101,8 +97,6 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
         // If object is split, then filter radar again
         radars_within_split_object = filterRadarWithinObject(object, radars_within_object);
       }
-      RCLCPP_INFO(
-        rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 14);
 
       // Estimate twist of object
       if (!radars_within_split_object.empty()) {
@@ -111,14 +105,11 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
           estimateTwist(split_object, radars_within_split_object);
       }
 
-      RCLCPP_INFO(
-        rclcpp::get_logger("radar_object_fusion_to_detected_object_node"), "Debug: %d", 15);
-
       // Delete objects with low probability
       if (isQualified(split_object, radars_within_split_object)) {
         split_object.classification.at(0).probability =
           std::max(split_object.classification.at(0).probability, param_.threshold_probability);
-        output.objects->objects.emplace_back(split_object);
+        output.objects.objects.emplace_back(split_object);
       }
     }
   }

@@ -77,7 +77,7 @@ public:
 
   struct Output
   {
-    DetectedObjects::SharedPtr objects{};
+    DetectedObjects objects{};
   };
 
   void setParam(const Param & param);

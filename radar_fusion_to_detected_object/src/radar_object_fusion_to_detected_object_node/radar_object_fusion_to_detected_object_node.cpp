@@ -203,10 +203,7 @@ void RadarObjectFusionToDetectedObjectNode::onTimer()
 
   // Update
   output_ = radar_fusion_to_detected_object_->update(input);
-
-  if (output_.objects) {
-    pub_objects_->publish(*output_.objects);
-  }
+  pub_objects_->publish(output_.objects);
 }
 
 std::shared_ptr<RadarFusionToDetectedObject::RadarInput>
