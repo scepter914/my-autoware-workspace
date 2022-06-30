@@ -197,8 +197,8 @@ void RadarObjectFusionToDetectedObjectNode::onTimer()
   RadarFusionToDetectedObject::Input input{};
   input.objects = detected_objects_;
   for (const auto & radar_object_ : radar_objects_->objects) {
-    auto radar_ptr = setRadarInput(radar_object_, radar_objects_->header);
-    input.radars.emplace_back(radar_ptr);
+    auto radar_input = setRadarInput(radar_object_, radar_objects_->header);
+    (*input.radars).emplace_back(radar_input);
   }
 
   // Update
@@ -206,8 +206,7 @@ void RadarObjectFusionToDetectedObjectNode::onTimer()
   pub_objects_->publish(output_.objects);
 }
 
-std::shared_ptr<RadarFusionToDetectedObject::RadarInput>
-RadarObjectFusionToDetectedObjectNode::setRadarInput(
+RadarFusionToDetectedObject::RadarInput RadarObjectFusionToDetectedObjectNode::setRadarInput(
   const TrackedObject & radar_object, std_msgs::msg::Header header_)
 {
   RadarFusionToDetectedObject::RadarInput output{};
@@ -215,9 +214,7 @@ RadarObjectFusionToDetectedObjectNode::setRadarInput(
   output.twist_with_covariance = radar_object.kinematics.twist_with_covariance;
   output.target_value = radar_object.classification.at(0).probability;
   output.header = header_;
-  std::shared_ptr<RadarFusionToDetectedObject::RadarInput> output_ =
-    std::make_shared<RadarFusionToDetectedObject::RadarInput>(output);
-  return output_;
+  return output;
 }
 
 }  // namespace radar_fusion_to_detected_object
