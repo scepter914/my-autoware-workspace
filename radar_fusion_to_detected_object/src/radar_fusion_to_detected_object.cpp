@@ -73,7 +73,7 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
 
   output.objects.header = input.objects->header;
 
-  if (input.objects->objects.empty()) {
+  if (!input.objects || input.objects->objects.empty()) {
     return output;
   }
 
@@ -99,7 +99,7 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
       }
 
       // Estimate twist of object
-      if (!(*radars_within_split_object).empty()) {
+      if (!radars_within_split_object || !(*radars_within_split_object).empty()) {
         split_object.kinematics.has_twist = true;
         split_object.kinematics.twist_with_covariance =
           estimateTwist(split_object, radars_within_split_object);
@@ -121,7 +121,7 @@ RadarFusionToDetectedObject::filterRadarWithinObject(
   const DetectedObject & object,
   const std::shared_ptr<std::vector<RadarFusionToDetectedObject::RadarInput>> & radars)
 {
-  std::shared_ptr<std::vector<RadarInput>> outputs{};
+  std::vector<RadarInput> outputs{};
 
   tier4_autoware_utils::Point2d object_size{object.shape.dimensions.x, object.shape.dimensions.y};
   LinearRing2d object_box = createObject2dWithMargin(object_size, param_.bounding_box_margin);
@@ -132,10 +132,10 @@ RadarFusionToDetectedObject::filterRadarWithinObject(
     Point2d radar_point{
       radar.pose_with_covariance.pose.position.x, radar.pose_with_covariance.pose.position.y};
     if (boost::geometry::within(radar_point, object_box)) {
-      (*outputs).emplace_back(radar);
+      outputs.emplace_back(radar);
     }
   }
-  return outputs;
+  return std::make_shared<std::vector<RadarFusionToDetectedObject::RadarInput>>(outputs);
 }
 
 // [TODO] (Satoshi Tanaka) Implementation

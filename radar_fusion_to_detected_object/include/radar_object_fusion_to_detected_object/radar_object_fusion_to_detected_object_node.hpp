@@ -82,7 +82,7 @@ private:
 
   // Lapper
   RadarFusionToDetectedObject::RadarInput setRadarInput(
-    const TrackedObject & radar_object, std_msgs::msg::Header header_);
+    const TrackedObject & radar_object, const std_msgs::msg::Header & header_);
 };
 
 }  // namespace radar_fusion_to_detected_object

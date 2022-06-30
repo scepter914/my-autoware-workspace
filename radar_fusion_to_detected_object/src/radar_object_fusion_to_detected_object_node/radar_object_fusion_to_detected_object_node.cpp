@@ -195,11 +195,13 @@ void RadarObjectFusionToDetectedObjectNode::onTimer()
 
   // Set input data
   RadarFusionToDetectedObject::Input input{};
-  input.objects = detected_objects_;
+  std::vector<RadarFusionToDetectedObject::RadarInput> radars_{};
   for (const auto & radar_object_ : radar_objects_->objects) {
     auto radar_input = setRadarInput(radar_object_, radar_objects_->header);
-    (*input.radars).emplace_back(radar_input);
+    radars_.emplace_back(radar_input);
   }
+  input.objects = detected_objects_;
+  input.radars = std::make_shared<std::vector<RadarFusionToDetectedObject::RadarInput>>(radars_);
 
   // Update
   output_ = radar_fusion_to_detected_object_->update(input);
@@ -207,7 +209,7 @@ void RadarObjectFusionToDetectedObjectNode::onTimer()
 }
 
 RadarFusionToDetectedObject::RadarInput RadarObjectFusionToDetectedObjectNode::setRadarInput(
-  const TrackedObject & radar_object, std_msgs::msg::Header header_)
+  const TrackedObject & radar_object, const std_msgs::msg::Header & header_)
 {
   RadarFusionToDetectedObject::RadarInput output{};
   output.pose_with_covariance = radar_object.kinematics.pose_with_covariance;
