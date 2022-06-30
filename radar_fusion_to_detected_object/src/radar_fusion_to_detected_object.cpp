@@ -124,43 +124,20 @@ RadarFusionToDetectedObject::filterRadarWithinObject(
   const std::shared_ptr<std::vector<RadarFusionToDetectedObject::RadarInput>> & radars)
 {
   std::vector<RadarInput> outputs{};
-  Point2d object_size{object.shape.dimensions.x, object.shape.dimensions.y};
 
-  double ob_x = (object_size.x() + param_.bounding_box_margin);
-  double ob_y = (object_size.y() + param_.bounding_box_margin);
-  double squared_search_distance = ob_x * ob_x + ob_y * ob_y;
-
+  tier4_autoware_utils::Point2d object_size{object.shape.dimensions.x, object.shape.dimensions.y};
   LinearRing2d object_box = createObject2dWithMargin(object_size, param_.bounding_box_margin);
   object_box = tier4_autoware_utils::transformVector(
     object_box, tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
 
   for (const auto & radar : (*radars)) {
-    if (isWithinBoundingBox(
-          radar, object.kinematics.pose_with_covariance.pose.position, object_box,
-          squared_search_distance)) {
+    Point2d radar_point{
+      radar.pose_with_covariance.pose.position.x, radar.pose_with_covariance.pose.position.y};
+    if (boost::geometry::within(radar_point, object_box)) {
       outputs.emplace_back(radar);
     }
   }
   return std::make_shared<std::vector<RadarFusionToDetectedObject::RadarInput>>(outputs);
-}
-
-bool RadarFusionToDetectedObject::isWithinBoundingBox(
-  const RadarInput & radar, const Point & object_point, LinearRing2d & object_box,
-  double squared_search_distance)
-{
-  // double squared_distance = tier4_autoware_utils::calcSquaredDistance2d(
-  //   object_point, radar.pose_with_covariance.pose.position);
-  // if (squared_distance > squared_search_distance) {
-  //   return false;
-  // }
-
-  // Point2d radar_point{
-  //   radar.pose_with_covariance.pose.position.x, radar.pose_with_covariance.pose.position.y};
-  if (boost::geometry::within(radar_point, object_box)) {
-    return true;
-  } else {
-    return false;
-  }
 }
 
 // [TODO] (Satoshi Tanaka) Implementation
