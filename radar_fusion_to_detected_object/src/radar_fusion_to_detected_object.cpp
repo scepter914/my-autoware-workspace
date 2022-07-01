@@ -97,7 +97,6 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
         // If object is split, then filter radar again
         radars_within_split_object = filterRadarWithinObject(object, radars_within_object);
       }
-
       // Estimate twist of object
       if (!radars_within_split_object || !(*radars_within_split_object).empty()) {
         split_object.kinematics.has_twist = true;
@@ -249,7 +248,7 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
   return twist_with_covariance;
 }
 
-// Jugde wether low confidence objects that do not have some radar points/objects or not.
+// Judge wether low confidence objects that do not have some radar points/objects or not.
 bool RadarFusionToDetectedObject::isQualified(
   const DetectedObject & object, std::shared_ptr<std::vector<RadarInput>> & radars)
 {
