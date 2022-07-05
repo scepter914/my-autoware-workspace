@@ -125,6 +125,7 @@ RadarFusionToDetectedObject::filterRadarWithinObject(
   std::vector<RadarInput> outputs{};
 
   tier4_autoware_utils::Point2d object_size{object.shape.dimensions.x, object.shape.dimensions.y};
+
   LinearRing2d object_box = createObject2dWithMargin(object_size, param_.bounding_box_margin);
   object_box = tier4_autoware_utils::transformVector(
     object_box, tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
@@ -136,6 +137,7 @@ RadarFusionToDetectedObject::filterRadarWithinObject(
       outputs.emplace_back(radar);
     }
   }
+
   return std::make_shared<std::vector<RadarFusionToDetectedObject::RadarInput>>(outputs);
 }
 

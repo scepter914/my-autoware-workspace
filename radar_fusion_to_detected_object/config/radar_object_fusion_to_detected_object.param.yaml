@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     node_params:
-      update_rate_hz: 10.0
+      update_rate_hz: 100.0
 
     core_params:
       bounding_box_margin: 2.0
