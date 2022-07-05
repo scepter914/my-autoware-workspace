@@ -17,7 +17,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
@@ -204,17 +203,8 @@ void RadarObjectFusionToDetectedObjectNode::onTimer()
   input.objects = detected_objects_;
   input.radars = std::make_shared<std::vector<RadarFusionToDetectedObject::RadarInput>>(radars_);
 
-  std::chrono::system_clock::time_point start, end;
-  int elapsed;
-  start = std::chrono::system_clock::now();  // 計測開始時間
-
   // Update
   output_ = radar_fusion_to_detected_object_->update(input);
-
-  end = std::chrono::system_clock::now();  // 計測終了時間
-  elapsed = (int)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-  RCLCPP_INFO(rclcpp::get_logger("package_name"), "time: %d", elapsed);
-
   pub_objects_->publish(output_.objects);
 }
 
