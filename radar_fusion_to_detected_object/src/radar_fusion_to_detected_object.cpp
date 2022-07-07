@@ -107,14 +107,9 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
           tf2::getYaw(split_object.kinematics.pose_with_covariance.pose.orientation));
         ;
         double diff_yaw = tier4_autoware_utils::normalizeRadian(twist_yaw - object_yaw);
-        if (isYawCorrect(diff_yaw, tier4_autoware_utils::deg2rad(20))) {
+        if (isYawCorrect(diff_yaw, param_.threshold_yaw_diff)) {
           split_object.kinematics.twist_with_covariance = twist_with_covariance;
           split_object.kinematics.has_twist = true;
-        } else {
-          RCLCPP_INFO(
-            rclcpp::get_logger("package_name"), "x: %f y: %f yaw: %f",
-            split_object.kinematics.pose_with_covariance.pose.position.x,
-            split_object.kinematics.pose_with_covariance.pose.position.y, diff_yaw);
         }
       }
 
@@ -129,6 +124,8 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
   return output;
 }
 
+// Judge whether object's yaw is same direction with twist's yaw.
+// This function improve multi object tracking with observed speed.
 bool RadarFusionToDetectedObject::isYawCorrect(const double & yaw, const double & yaw_threshold)
 {
   double normalized_yaw = tier4_autoware_utils::normalizeRadian(yaw);
@@ -274,7 +271,7 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
   return twist_with_covariance;
 }
 
-// Judge wether low confidence objects that do not have some radar points/objects or not.
+// Judge whether low confidence objects that do not have some radar points/objects or not.
 bool RadarFusionToDetectedObject::isQualified(
   const DetectedObject & object, std::shared_ptr<std::vector<RadarInput>> & radars)
 {

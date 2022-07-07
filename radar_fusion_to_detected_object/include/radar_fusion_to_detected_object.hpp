@@ -48,6 +48,7 @@ public:
     // Radar fusion param
     double bounding_box_margin{};
     double split_threshold_velocity{};
+    double threshold_yaw_diff{};
 
     // Weight param for velocity estimation
     double velocity_weight_average{};
