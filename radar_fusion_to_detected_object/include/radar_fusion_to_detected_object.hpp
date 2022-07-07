@@ -97,6 +97,7 @@ private:
     const DetectedObject & object, std::shared_ptr<std::vector<RadarInput>> & radars);
   TwistWithCovariance convertDopplerToTwist(
     const DetectedObject & object, const TwistWithCovariance & twist_with_covariance);
+  bool isYawCorrect(const double & yaw, const double & yaw_threshold);
   Twist addTwist(const Twist & twist_1, const Twist & twist_2);
   Twist scaleTwist(const Twist & twist, const double scale);
   double getTwistNorm(const Twist & twist);

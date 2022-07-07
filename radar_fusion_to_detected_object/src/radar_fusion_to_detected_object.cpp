@@ -99,9 +99,23 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
       }
       // Estimate twist of object
       if (!radars_within_split_object || !(*radars_within_split_object).empty()) {
-        split_object.kinematics.has_twist = true;
-        split_object.kinematics.twist_with_covariance =
+        TwistWithCovariance twist_with_covariance =
           estimateTwist(split_object, radars_within_split_object);
+        double twist_yaw = tier4_autoware_utils::normalizeRadian(
+          std::atan2(twist_with_covariance.twist.linear.y, twist_with_covariance.twist.linear.x));
+        double object_yaw = tier4_autoware_utils::normalizeRadian(
+          tf2::getYaw(split_object.kinematics.pose_with_covariance.pose.orientation));
+        ;
+        double diff_yaw = tier4_autoware_utils::normalizeRadian(twist_yaw - object_yaw);
+        if (isYawCorrect(diff_yaw, tier4_autoware_utils::deg2rad(20))) {
+          split_object.kinematics.twist_with_covariance = twist_with_covariance;
+          split_object.kinematics.has_twist = true;
+        } else {
+          RCLCPP_INFO(
+            rclcpp::get_logger("package_name"), "x: %f y: %f yaw: %f",
+            split_object.kinematics.pose_with_covariance.pose.position.x,
+            split_object.kinematics.pose_with_covariance.pose.position.y, diff_yaw);
+        }
       }
 
       // Delete objects with low probability
@@ -113,6 +127,18 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
     }
   }
   return output;
+}
+
+bool RadarFusionToDetectedObject::isYawCorrect(const double & yaw, const double & yaw_threshold)
+{
+  double normalized_yaw = tier4_autoware_utils::normalizeRadian(yaw);
+  if (std::abs(normalized_yaw) < yaw_threshold) {
+    return true;
+  } else if (M_PI - yaw_threshold < std::abs(normalized_yaw)) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 // Choose radar pointcloud/objects within 3D bounding box from lidar-base detection with margin
