@@ -70,8 +70,6 @@ void RadarFusionToDetectedObject::setParam(const Param & param)
 RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
   const RadarFusionToDetectedObject::Input & input)
 {
-  RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "1");
-
   RadarFusionToDetectedObject::Output output{};
   output.objects.header = input.objects->header;
 
@@ -82,7 +80,6 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
   for (auto & object : input.objects->objects) {
     // Link between 3d bounding box and radar data
 
-    RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "2");
     std::shared_ptr<std::vector<RadarInput>> radars_within_object =
       filterRadarWithinObject(object, input.radars);
 
@@ -93,7 +90,6 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
     split_objects.emplace_back(object);
 
     for (auto & split_object : split_objects) {
-      RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "3");
       // set radars within objects
       std::shared_ptr<std::vector<RadarInput>> radars_within_split_object;
       if (split_objects.size() == 1) {
@@ -104,16 +100,12 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
         radars_within_split_object = filterRadarWithinObject(split_object, radars_within_object);
       }
 
-      RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "4");
       // Estimate twist of object
       if (!radars_within_split_object || !(*radars_within_split_object).empty()) {
-        RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "5");
         TwistWithCovariance twist_with_covariance =
           estimateTwist(split_object, radars_within_split_object);
-        RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "6");
 
         if (isYawCorrect(split_object, twist_with_covariance, param_.threshold_yaw_diff)) {
-          RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "7");
           split_object.kinematics.twist_with_covariance = twist_with_covariance;
           split_object.kinematics.has_twist = true;
         }
@@ -188,18 +180,14 @@ RadarFusionToDetectedObject::filterRadarWithinObject(
 TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
   const DetectedObject & object, std::shared_ptr<std::vector<RadarInput>> & radars)
 {
-  RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "11");
   if (!radars || (*radars).empty()) {
     TwistWithCovariance output{};
     return output;
   }
 
-  RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "12");
   // calculate twist for radar data with min distance
   Eigen::Vector2d vec_min_distance(0.0, 0.0);
-  RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "121");
   if (param_.velocity_weight_min_distance > 0.0) {
-    RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "122");
     auto comp_func = [&](const RadarInput & a, const RadarInput & b) {
       return tier4_autoware_utils::calcSquaredDistance2d(
                a.pose_with_covariance.pose.position,
@@ -208,16 +196,11 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
                b.pose_with_covariance.pose.position,
                object.kinematics.pose_with_covariance.pose.position);
     };
-    RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "123");
     auto iter = std::min_element(std::begin(*radars), std::end(*radars), comp_func);
-    RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "124");
     TwistWithCovariance twist_min_distance = iter->twist_with_covariance;
-    RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "125");
     vec_min_distance = toVector2d(twist_min_distance);
-    RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "126");
   }
 
-  RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "13");
   // calculate twist for radar data with median twist
   Eigen::Vector2d vec_median(0.0, 0.0);
   if (param_.velocity_weight_median > 0.0) {
@@ -238,7 +221,6 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
     }
   }
 
-  RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "14");
   // calculate twist for radar data with average twist
   Eigen::Vector2d vec_average(0.0, 0.0);
   if (param_.velocity_weight_average > 0.0) {
@@ -248,7 +230,6 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
     vec_average /= (*radars).size();
   }
 
-  RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "15");
   // calculate twist for radar data with top target value
   Eigen::Vector2d vec_top_target_value(0.0, 0.0);
   if (param_.velocity_weight_target_value_top > 0.0) {
@@ -259,7 +240,6 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
     vec_top_target_value = toVector2d(iter->twist_with_covariance);
   }
 
-  RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "16");
   // calculate twist for radar data with target_value * average
   Eigen::Vector2d vec_target_value_average(0.0, 0.0);
   double sum_target_value = 0.0;
@@ -271,7 +251,6 @@ TwistWithCovariance RadarFusionToDetectedObject::estimateTwist(
     vec_target_value_average /= sum_target_value;
   }
 
-  RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "17");
   Eigen::Vector2d sum_vec = vec_min_distance * param_.velocity_weight_min_distance +
                             vec_median * param_.velocity_weight_median +
                             vec_average * param_.velocity_weight_average +
@@ -309,16 +288,16 @@ bool RadarFusionToDetectedObject::isQualified(
 //   return twist_with_covariance;
 // }
 
-Eigen::Vector2d toVector2d(const TwistWithCovariance & twist_with_covariance)
+Eigen::Vector2d RadarFusionToDetectedObject::toVector2d(
+  const TwistWithCovariance & twist_with_covariance)
 {
-  RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "1241");
   auto vec = twist_with_covariance.twist.linear;
   Eigen::Vector2d output(vec.x, vec.y);
-  RCLCPP_INFO(rclcpp::get_logger("package_name"), "Debug: %s", "1242");
   return output;
 }
 
-TwistWithCovariance toTwistWithCovariance(const Eigen::Vector2d & vector2d)
+TwistWithCovariance RadarFusionToDetectedObject::toTwistWithCovariance(
+  const Eigen::Vector2d & vector2d)
 {
   TwistWithCovariance output{};
   output.twist.linear.x = vector2d(0);
