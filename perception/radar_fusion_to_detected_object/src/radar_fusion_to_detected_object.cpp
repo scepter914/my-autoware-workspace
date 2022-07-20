@@ -42,7 +42,7 @@ void RadarFusionToDetectedObject::setParam(const Param & param)
   param_.split_threshold_velocity = param.split_threshold_velocity;
   param_.threshold_yaw_diff = param.split_threshold_velocity;
 
-  // normalize weight param
+  // Normalize weight param
   double sum_weight = param.velocity_weight_median + param.velocity_weight_min_distance +
                       param.velocity_weight_average + param.velocity_weight_target_value_average +
                       param.velocity_weight_target_value_top;
@@ -71,7 +71,6 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
   const RadarFusionToDetectedObject::Input & input)
 {
   RadarFusionToDetectedObject::Output output{};
-
   output.objects.header = input.objects->header;
 
   if (!input.objects || input.objects->objects.empty()) {
@@ -90,24 +89,21 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
     split_objects.emplace_back(object);
 
     for (auto & split_object : split_objects) {
+      // set radars within objects
       std::shared_ptr<std::vector<RadarInput>> radars_within_split_object;
       if (split_objects.size() == 1) {
         // If object is not split, radar data within object is same
         radars_within_split_object = radars_within_object;
       } else {
         // If object is split, then filter radar again
-        radars_within_split_object = filterRadarWithinObject(object, radars_within_object);
+        radars_within_split_object = filterRadarWithinObject(split_object, radars_within_object);
       }
+
       // Estimate twist of object
       if (!radars_within_split_object || !(*radars_within_split_object).empty()) {
         TwistWithCovariance twist_with_covariance =
           estimateTwist(split_object, radars_within_split_object);
-        const double twist_yaw = tier4_autoware_utils::normalizeRadian(
-          std::atan2(twist_with_covariance.twist.linear.y, twist_with_covariance.twist.linear.x));
-        const double object_yaw = tier4_autoware_utils::normalizeRadian(
-          tf2::getYaw(split_object.kinematics.pose_with_covariance.pose.orientation));
-        const double diff_yaw = tier4_autoware_utils::normalizeRadian(twist_yaw - object_yaw);
-        if (isYawCorrect(diff_yaw, param_.threshold_yaw_diff)) {
+        if (isYawCorrect(split_object, twist_with_covariance, param_.threshold_yaw_diff)) {
           split_object.kinematics.twist_with_covariance = twist_with_covariance;
           split_object.kinematics.has_twist = true;
         }
@@ -126,12 +122,18 @@ RadarFusionToDetectedObject::Output RadarFusionToDetectedObject::update(
 
 // Judge whether object's yaw is same direction with twist's yaw.
 // This function improve multi object tracking with observed speed.
-bool RadarFusionToDetectedObject::isYawCorrect(const double & yaw, const double & yaw_threshold)
+bool RadarFusionToDetectedObject::isYawCorrect(
+  const DetectedObject & object, const TwistWithCovariance & twist_with_covariance,
+  const double & yaw_threshold)
 {
-  double normalized_yaw = tier4_autoware_utils::normalizeRadian(yaw);
-  if (std::abs(normalized_yaw) < yaw_threshold) {
+  const double twist_yaw = tier4_autoware_utils::normalizeRadian(
+    std::atan2(twist_with_covariance.twist.linear.y, twist_with_covariance.twist.linear.x));
+  const double object_yaw = tier4_autoware_utils::normalizeRadian(
+    tf2::getYaw(object.kinematics.pose_with_covariance.pose.orientation));
+  const double diff_yaw = tier4_autoware_utils::normalizeRadian(twist_yaw - object_yaw);
+  if (std::abs(diff_yaw) < yaw_threshold) {
     return true;
-  } else if (M_PI - yaw_threshold < std::abs(normalized_yaw)) {
+  } else if (M_PI - yaw_threshold < std::abs(diff_yaw)) {
     return true;
   } else {
     return false;
