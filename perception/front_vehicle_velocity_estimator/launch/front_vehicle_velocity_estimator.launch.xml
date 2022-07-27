@@ -1,0 +1,22 @@
+<launch>
+  <!-- Input -->
+  <arg name="input/data" default="~/input/data" />
+
+  <!-- Output -->
+  <arg name="output/data" default="~/output/data" />
+
+  <!-- Parameter -->
+  <arg name="config_file" default="$(find-pkg-share front_vehicle_velocity_estimator)/config/front_vehicle_velocity_estimator.param.yaml" />
+
+  <!-- Node -->
+  <node pkg="front_vehicle_velocity_estimator" exec="front_vehicle_velocity_estimator_node" name="front_vehicle_velocity_estimator" output="screen">
+    <!-- Input -->
+    <remap from="~/input/data" to="$(var input/data)"/>
+
+    <!-- Output -->
+    <remap from="~/output/data" to="$(var output/data)"/>
+
+    <!-- Parameter -->
+    <param from="$(var config_file)" />
+  </node>
+</launch>
