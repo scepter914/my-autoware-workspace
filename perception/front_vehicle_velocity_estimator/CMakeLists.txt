@@ -19,6 +19,7 @@ autoware_package()
 # Targets
 ament_auto_add_library(front_vehicle_velocity_estimator_node_component SHARED
   src/front_vehicle_velocity_estimator_node/front_vehicle_velocity_estimator_node.cpp
+  src/front_vehicle_velocity_estimator_node/front_vehicle_velocity_estimator.cpp
 )
 
 rclcpp_components_register_node(front_vehicle_velocity_estimator_node_component

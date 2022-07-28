@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2021 Kenji Miyake
+// Copyright 2022 TIER IV, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,18 +15,22 @@
 #ifndef FRONT_VEHICLE_VELOCITY_ESTIMATOR__FRONT_VEHICLE_VELOCITY_ESTIMATOR_NODE_HPP__
 #define FRONT_VEHICLE_VELOCITY_ESTIMATOR__FRONT_VEHICLE_VELOCITY_ESTIMATOR_NODE_HPP__
 
+#include "front_vehicle_velocity_estimator/front_vehicle_velocity_estimator.hpp"
+#include "rclcpp/rclcpp.hpp"
+
+#include "autoware_auto_perception_msgs/msg/detected_objects.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+
 #include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "example_interfaces/msg/int32.hpp"
-#include "front_vehicle_velocity_estimator/front_vehicle_velocity_estimator.hpp"
-#include "rclcpp/rclcpp.hpp"
-
 namespace front_vehicle_velocity_estimator
 {
-using example_interfaces::msg::Int32;
+using autoware_auto_perception_msgs::msg::DetectedObject;
+using autoware_auto_perception_msgs::msg::DetectedObjects;
+using sensor_msgs::msg::PointCloud2;
 
 class FrontVehicleVelocityEstimatorNode : public rclcpp::Node
 {
@@ -41,16 +44,19 @@ public:
 
 private:
   // Subscriber
-  rclcpp::Subscription<Int32>::SharedPtr sub_data_{};
+  rclcpp::Subscription<PointCloud2>::SharedPtr sub_pointcloud_{};
+  rclcpp::Subscription<DetectedObjects>::SharedPtr sub_objects_{};
 
   // Callback
-  void onData(const Int32::ConstSharedPtr msg);
+  void onPointcloud(const PointCloud2::ConstSharedPtr msg);
+  void onObjects(const DetectedObjects::ConstSharedPtr msg);
 
   // Data Buffer
-  Int32::ConstSharedPtr data_{};
+  PointCloud2::ConstSharedPtr pointcloud_data_{};
+  DetectedObjects::ConstSharedPtr objects_data_{};
 
   // Publisher
-  rclcpp::Publisher<Int32>::SharedPtr pub_data_{};
+  rclcpp::Publisher<DetectedObjects>::SharedPtr pub_objects_{};
 
   // Timer
   rclcpp::TimerBase::SharedPtr timer_{};

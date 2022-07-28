@@ -1,20 +1,19 @@
 <launch>
   <!-- Input -->
-  <arg name="input/data" default="~/input/data" />
+  <arg name="input/objects" default="~/input/objects" />
+  <arg name="input/pointcloud" default="~/input/pointcloud" />
 
   <!-- Output -->
-  <arg name="output/data" default="~/output/data" />
-
-  <!-- Parameter -->
-  <arg name="config_file" default="$(find-pkg-share front_vehicle_velocity_estimator)/config/front_vehicle_velocity_estimator.param.yaml" />
+  <arg name="output/objects" default="~/output/objects" />
 
   <!-- Node -->
   <node pkg="front_vehicle_velocity_estimator" exec="front_vehicle_velocity_estimator_node" name="front_vehicle_velocity_estimator" output="screen">
     <!-- Input -->
-    <remap from="~/input/data" to="$(var input/data)"/>
+    <remap from="~/input/objects" to="$(var input/objects)"/>
+    <remap from="~/input/pointcloud" to="$(var input/pointcloud)"/>
 
     <!-- Output -->
-    <remap from="~/output/data" to="$(var output/data)"/>
+    <remap from="~/output/objects" to="$(var output/objects)"/>
 
     <!-- Parameter -->
     <param from="$(var config_file)" />
