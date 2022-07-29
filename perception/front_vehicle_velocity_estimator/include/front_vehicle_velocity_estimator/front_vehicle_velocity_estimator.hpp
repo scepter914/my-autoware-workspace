@@ -51,6 +51,7 @@ public:
   struct Output
   {
     DetectedObjects::SharedPtr objects{};
+    PointCloud2::SharedPtr nearest_neighbor_pointcloud{};
   };
 
   struct Param
@@ -73,6 +74,8 @@ private:
   LinearRing2d createBoxArea(const double x_size, const double y_size);
   DetectedObject filterFrontVehicle(
     DetectedObjects::ConstSharedPtr objects, LinearRing2d & front_area);
+  PointCloud2::SharedPtr pointcloud
+  getNearestNeighbor(DetectedObject & object, PointCloud2::SharedPtr pointcloud);
   double estimateVelocity(
     DetectedObject & object, PointCloud2::SharedPtr pointcloud, Odometry::ConstSharedPtr odometry);
 };
