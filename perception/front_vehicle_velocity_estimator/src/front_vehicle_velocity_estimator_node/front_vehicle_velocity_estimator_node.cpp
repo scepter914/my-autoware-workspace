@@ -60,6 +60,8 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
 
   // Core Parameter
   core_param_.moving_average_num = declare_parameter<int>("core_params.moving_average_num", 1);
+  core_param_.threshold_pointcloud_z =
+    declare_parameter<double>("core_params.threshold_pointcloud_z", 0.5);
 
   // Subscriber
   sub_pointcloud_ = create_subscription<PointCloud2>(
@@ -117,6 +119,7 @@ rcl_interfaces::msg::SetParametersResult FrontVehicleVelocityEstimatorNode::onSe
 
       // Update params
       update_param(params, "core_params.moving_average_num", p.moving_average_num);
+      update_param(params, "core_params.threshold_pointcloud_z", p.threshold_pointcloud_z);
 
       // Set parameter to instance
       if (front_vehicle_velocity_estimator_) {
