@@ -69,6 +69,10 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
     "~/input/objects", rclcpp::QoS{1},
     std::bind(&FrontVehicleVelocityEstimatorNode::onObjects, this, _1));
 
+  sub_odometry_ = create_subscription<Odometry>(
+    "~/input/odometry", rclcpp::QoS{1},
+    std::bind(&FrontVehicleVelocityEstimatorNode::onOdometry, this, _1));
+
   // Publisher
   pub_objects_ = create_publisher<DetectedObjects>("~/output/objects", 1);
 
@@ -86,6 +90,11 @@ void FrontVehicleVelocityEstimatorNode::onPointcloud(const PointCloud2::ConstSha
 void FrontVehicleVelocityEstimatorNode::onObjects(const DetectedObjects::ConstSharedPtr msg)
 {
   objects_data_ = msg;
+}
+
+void FrontVehicleVelocityEstimatorNode::onOdometry(const Odometry::ConstSharedPtr msg)
+{
+  odometry_data_ = msg;
 }
 
 rcl_interfaces::msg::SetParametersResult FrontVehicleVelocityEstimatorNode::onSetParam(
@@ -143,15 +152,21 @@ void FrontVehicleVelocityEstimatorNode::onTimer()
   if (!isDataReady()) {
     return;
   }
-  // Set input data
-  input_.objects = objects_data_;
-  input_.pointcloud = pointcloud_data_;
 
-  // Update
-  output_ = front_vehicle_velocity_estimator_->update(input_);
+  if (!odometry_data_) {
+    // If odometry data does not come, publish original objects
+    pub_objects_->publish(*objects_data_);
+  } else {
+    // Set input data
+    input_.objects = objects_data_;
+    input_.pointcloud = pointcloud_data_;
 
-  // Publish
-  pub_objects_->publish(*(output_.objects));
+    // Update
+    output_ = front_vehicle_velocity_estimator_->update(input_);
+
+    // Publish
+    pub_objects_->publish(*(output_.objects));
+  }
 }
 
 }  // namespace front_vehicle_velocity_estimator

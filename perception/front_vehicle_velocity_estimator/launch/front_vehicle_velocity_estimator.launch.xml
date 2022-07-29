@@ -2,6 +2,7 @@
   <!-- Input -->
   <arg name="input/objects" default="~/input/objects" />
   <arg name="input/pointcloud" default="~/input/pointcloud" />
+  <arg name="input/odometry" default="~/input/odometry" />
 
   <!-- Output -->
   <arg name="output/objects" default="~/output/objects" />
@@ -11,6 +12,7 @@
     <!-- Input -->
     <remap from="~/input/objects" to="$(var input/objects)"/>
     <remap from="~/input/pointcloud" to="$(var input/pointcloud)"/>
+    <remap from="~/input/odometry" to="$(var input/odometry)"/>
 
     <!-- Output -->
     <remap from="~/output/objects" to="$(var output/objects)"/>

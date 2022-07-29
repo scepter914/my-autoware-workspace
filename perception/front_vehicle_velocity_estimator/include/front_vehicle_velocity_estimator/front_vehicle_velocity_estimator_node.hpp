@@ -19,6 +19,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "autoware_auto_perception_msgs/msg/detected_objects.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 
 #include <chrono>
@@ -30,6 +31,7 @@ namespace front_vehicle_velocity_estimator
 {
 using autoware_auto_perception_msgs::msg::DetectedObject;
 using autoware_auto_perception_msgs::msg::DetectedObjects;
+using nav_msgs::msg::Odometry;
 using sensor_msgs::msg::PointCloud2;
 
 class FrontVehicleVelocityEstimatorNode : public rclcpp::Node
@@ -46,14 +48,17 @@ private:
   // Subscriber
   rclcpp::Subscription<PointCloud2>::SharedPtr sub_pointcloud_{};
   rclcpp::Subscription<DetectedObjects>::SharedPtr sub_objects_{};
+  rclcpp::Subscription<Odometry>::SharedPtr sub_odometry_{};
 
   // Callback
   void onPointcloud(const PointCloud2::ConstSharedPtr msg);
   void onObjects(const DetectedObjects::ConstSharedPtr msg);
+  void onOdometry(const Odometry::ConstSharedPtr msg);
 
   // Data Buffer
   PointCloud2::ConstSharedPtr pointcloud_data_{};
   DetectedObjects::ConstSharedPtr objects_data_{};
+  Odometry::ConstSharedPtr odometry_data_{};
 
   // Publisher
   rclcpp::Publisher<DetectedObjects>::SharedPtr pub_objects_{};

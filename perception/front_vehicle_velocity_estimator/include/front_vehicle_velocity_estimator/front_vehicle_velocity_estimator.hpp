@@ -19,6 +19,7 @@
 #include "rclcpp/logger.hpp"
 
 #include "autoware_auto_perception_msgs/msg/detected_objects.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 
 #include <memory>
@@ -29,6 +30,7 @@ namespace front_vehicle_velocity_estimator
 {
 using autoware_auto_perception_msgs::msg::DetectedObject;
 using autoware_auto_perception_msgs::msg::DetectedObjects;
+using nav_msgs::msg::Odometry;
 using sensor_msgs::msg::PointCloud2;
 
 class FrontVehicleVelocityEstimator
@@ -40,6 +42,7 @@ public:
   {
     PointCloud2::ConstSharedPtr pointcloud{};
     DetectedObjects::ConstSharedPtr objects{};
+    Odometry::ConstSharedPtr odometry{};
   };
 
   struct Output
