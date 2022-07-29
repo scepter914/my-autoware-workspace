@@ -56,7 +56,7 @@ public:
 
   struct Param
   {
-    int moving_average_num{};
+    uint moving_average_num{};
     float threshold_pointcloud_z{};
   };
 

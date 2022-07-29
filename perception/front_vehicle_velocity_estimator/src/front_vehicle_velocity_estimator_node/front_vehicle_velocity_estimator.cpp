@@ -22,9 +22,9 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
 {
   // Filter front vehicle
   LinearRing2d front_area = createBoxArea(50.0, 4.0);
-  Output output_{};
-  DetectedObject front_vehicle{};
-  [ output_, front_vehicle ] = filterFrontVehicle(input.objects, front_area);
+  // Output output_{};
+  // DetectedObject front_vehicle{};
+  auto [output_, front_vehicle] = filterFrontVehicle(input.objects, front_area);
   // RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug: %d", 0);
 
   // Get nearest neighbor pointcloud
@@ -41,7 +41,7 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   front_vehicle.kinematics.twist_with_covariance.twist.linear.x = velocity;
   front_vehicle.kinematics.has_twist_covariance = true;
   front_vehicle.kinematics.twist_with_covariance.covariance.at(0) = 1.0;
-  output_.objects.objects.emplace_back(front_vehicle);
+  output_.objects->objects.emplace_back(front_vehicle);
 
   RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Velocity: %f", velocity);
 
@@ -69,38 +69,44 @@ FrontVehicleVelocityEstimator::filterFrontVehicle(
 {
   // Initialize output
   Output output_{};
-  output_.objects.header = input.objects->header;
+  output_.objects->header = objects->header;
 
   DetectedObject front_vehicle;
   bool is_initialized = false;
 
-  for (const auto & object : objects) {
-    auto position = object.pose_with_covariance.pose.position;
+  for (const auto & object : objects->objects) {
+    auto position = object.kinematics.pose_with_covariance.pose.position;
     Point2d object_point{position.x, position.y};
 
     if (!boost::geometry::within(object_point, front_area)) {
-      outputs.objects.objects.emplace_back(object);
+      output_.objects->objects.emplace_back(object);
     } else if (!is_initialized) {
       front_vehicle = object;
       is_initialized = true;
     } else {
       auto front_vehicle_position = front_vehicle.kinematics.pose_with_covariance.pose.position;
       if (position.x < front_vehicle_position.x) {
-        output_.objects.objects.emplace_back(front_vehicle);
+        output_.objects->objects.emplace_back(front_vehicle);
         front_vehicle = object;
       } else {
-        output_.objects.objects.emplace_back(object);
+        output_.objects->objects.emplace_back(object);
       }
     }
   }
-  return std::pair(output, front_vehicle);
+  return std::pair(output_, front_vehicle);
 }
 
-PointCloud2::SharedPtr getNearestNeighbor(
+PointCloud2::SharedPtr FrontVehicleVelocityEstimator::getNearestNeighbor(
   const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud)
 {
+  PointCloud2 nearest_neighbor_pointcloud{};
+  nearest_neighbor_pointcloud.header = pointcloud->header;
+  return std::make_shared(nearest_neighbor_pointcloud);
 }
 
-double FrontVehicleVelocityEstimator::estimateVelocity(Odometry::ConstSharedPtr odometry) {}
+double FrontVehicleVelocityEstimator::estimateVelocity(Odometry::ConstSharedPtr odometry)
+{
+  return 0.0;
+}
 
 }  // namespace front_vehicle_velocity_estimator
