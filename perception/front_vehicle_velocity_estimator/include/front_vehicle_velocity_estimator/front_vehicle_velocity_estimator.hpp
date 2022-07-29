@@ -17,6 +17,7 @@
 #define FRONT_VEHICLE_VELOCITY_ESTIMATOR__FRONT_VEHICLE_VELOCITY_ESTIMATOR_HPP__
 
 #include "rclcpp/logger.hpp"
+#include "tier4_autoware_utils/tier4_autoware_utils.hpp"
 
 #include "autoware_auto_perception_msgs/msg/detected_objects.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -32,6 +33,8 @@ using autoware_auto_perception_msgs::msg::DetectedObject;
 using autoware_auto_perception_msgs::msg::DetectedObjects;
 using nav_msgs::msg::Odometry;
 using sensor_msgs::msg::PointCloud2;
+using tier4_autoware_utils::LinearRing2d;
+using tier4_autoware_utils::Point2d;
 
 class FrontVehicleVelocityEstimator
 {
@@ -53,17 +56,25 @@ public:
   struct Param
   {
     int moving_average_num{};
+    float threshold_pointcloud_z{};
   };
 
   void setParam(const Param & param) { param_ = param; }
-
   Output update(const Input & input);
-  DetectedObjects::SharedPtr addFrontVehicleVelocity(
-    DetectedObjects::ConstSharedPtr objects_data_, PointCloud2::ConstSharedPtr pointcloud_data_);
 
 private:
   rclcpp::Logger logger_;
+
+  // Buffer data
   Param param_{};
+  std::vector<PointCloud2> pointcloud{};
+
+  // Function
+  LinearRing2d createBoxArea(const double x_size, const double y_size);
+  DetectedObject filterFrontVehicle(
+    DetectedObjects::ConstSharedPtr objects, LinearRing2d & front_area);
+  double estimateVelocity(
+    DetectedObject & object, PointCloud2::SharedPtr pointcloud, Odometry::ConstSharedPtr odometry);
 };
 
 }  // namespace front_vehicle_velocity_estimator

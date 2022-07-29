@@ -33,6 +33,8 @@ using autoware_auto_perception_msgs::msg::DetectedObject;
 using autoware_auto_perception_msgs::msg::DetectedObjects;
 using nav_msgs::msg::Odometry;
 using sensor_msgs::msg::PointCloud2;
+using tier4_autoware_utils::LinearRing2d;
+using tier4_autoware_utils::Point2d;
 
 class FrontVehicleVelocityEstimatorNode : public rclcpp::Node
 {
