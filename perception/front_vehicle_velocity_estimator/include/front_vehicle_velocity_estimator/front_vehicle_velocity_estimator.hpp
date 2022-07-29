@@ -16,6 +16,9 @@
 #ifndef FRONT_VEHICLE_VELOCITY_ESTIMATOR__FRONT_VEHICLE_VELOCITY_ESTIMATOR_HPP__
 #define FRONT_VEHICLE_VELOCITY_ESTIMATOR__FRONT_VEHICLE_VELOCITY_ESTIMATOR_HPP__
 
+#include "pcl/point_cloud.h"
+#include "pcl/point_types.h"
+#include "pcl_conversions/pcl_conversions.h"
 #include "rclcpp/logger.hpp"
 #include "tier4_autoware_utils/tier4_autoware_utils.hpp"
 
@@ -23,9 +26,9 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 
+#include <deque>
 #include <memory>
 #include <string>
-#include <vector>
 
 namespace front_vehicle_velocity_estimator
 {
@@ -68,13 +71,13 @@ private:
 
   // Buffer data
   Param param_{};
-  std::vector<PointCloud2> nearest_neighbor_pointcloud_vector{};
+  std::deque<pcl::PointXYZ> nearest_neighbor_point_queue{};
 
   // Function
   LinearRing2d createBoxArea(const double x_size, const double y_size);
   std::pair<Output, DetectedObject> filterFrontVehicle(
     DetectedObjects::ConstSharedPtr objects, const LinearRing2d & front_area);
-  PointCloud2::SharedPtr getNearestNeighbor(
+  pcl::PointXYZ getNearestNeighbor(
     const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud);
   double estimateVelocity(Odometry::ConstSharedPtr odometry);
 };

@@ -28,11 +28,20 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   // RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug: %d", 0);
 
   // Get nearest neighbor pointcloud
-  output_.nearest_neighbor_pointcloud = getNearestNeighbor(front_vehicle, input.pointcloud);
-  if ((int)nearest_neighbor_pointcloud_vector.size() < param_.moving_average_num) {
-    nearest_neighbor_pointcloud_vector.push_back(*output_.nearest_neighbor_pointcloud);
-  } else {
+  pcl::PointXYZ nearest_neighbor_point = getNearestNeighbor(front_vehicle, input.pointcloud);
+
+  // Set output
+  pcl::PointCloud<pcl::PointXYZ> output_pointcloud;
+  output_pointcloud.points.push_back(nearest_neighbor_point);
+  auto pointcloud_msg = output_pointcloud.makeShared();
+  // pcl::toROSMsg(output_pointcloud, *(output_.nearest_neighbor_pointcloud));
+  output_.nearest_neighbor_pointcloud = pointcloud_msg;
+
+  // Set queue of nearest_neighbor_point
+  if ((int)nearest_neighbor_point_queue.size() >= param_.moving_average_num) {
+    auto _old_point = nearest_neighbor_point_queue.pop_front();
   }
+  nearest_neighbor_point_queue.push_back(*output_.nearest_neighbor_pointcloud);
 
   // Estimate velocity
   double velocity = estimateVelocity(input.odometry);
@@ -96,12 +105,28 @@ FrontVehicleVelocityEstimator::filterFrontVehicle(
   return std::pair(output_, front_vehicle);
 }
 
-PointCloud2::SharedPtr FrontVehicleVelocityEstimator::getNearestNeighbor(
+pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighbor(
   const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud)
 {
-  PointCloud2 nearest_neighbor_pointcloud{};
-  nearest_neighbor_pointcloud.header = pointcloud->header;
-  return std::make_shared<PointCloud2>(nearest_neighbor_pointcloud);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_msg(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::fromROSMsg(*pointcloud, *pcl_msg);
+
+  // Initialize
+  pcl::PointXYZ nearest_neighbor_point;
+  bool is_initialized = false;
+
+  for (const auto & point : *pcl_msg) {
+    Point2d point_{point.x, point.y};
+    if (boost::geometry::within(point_, object_ring_2d)) {
+      if (!is_initialized) {
+        nearest_neighbor_point = point;
+      } else if (point.x < nearest_neighbor_point.x) {
+        nearest_neighbor_point = point;
+      }
+    }
+  }
+
+  return nearest_neighbor_point;
 }
 
 double FrontVehicleVelocityEstimator::estimateVelocity(Odometry::ConstSharedPtr odometry)
