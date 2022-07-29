@@ -20,15 +20,22 @@ namespace front_vehicle_velocity_estimator
 FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   const FrontVehicleVelocityEstimator::Input & input)
 {
-  // Initialize output
-  FrontVehicleVelocityEstimator::Output output{};
-  output.objects.header = input.objects->header;
-
+  // Filter front vehicle
   LinearRing2d front_area = createBoxArea(50.0, 4.0);
-  DetectedObject front_vehicle = filterFrontVehicle(input.objects, front_area);
+  Output output_{};
+  DetectedObject front_vehicle{};
+  [ output_, front_vehicle ] = filterFrontVehicle(input.objects, front_area);
   // RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug: %d", 0);
 
-  double velocity = estimateVelocity(front_object, input.pointcloud, input.odometry);
+  // Get nearest neighbor pointcloud
+  PointCloud2 nearest_neighbor_pointcloud = getNearestNeighbor(front_vehicle, input.pointcloud);
+  output.nearest_neighbor_pointcloud = nearest_neighbor_pointcloud_vector;
+
+  // Estimate velocity
+  double velocity = estimateVelocity(front_vehicle, input.pointcloud, input.odometry);
+  front_vehicle.kinematics.has_twist = true;
+  front_vehicle.kinematics.twist_with_covariance.twist.linear.x = velocity;
+  outputs.objects.objects.emplace_back(front_vehicle);
 
   // Sample
   // RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug: %d", 0);
@@ -49,9 +56,15 @@ LinearRing2d FrontVehicleVelocityEstimator::createBoxArea(const double x_size, c
 
 // Filter for a front vehicle.
 // Objects except the front vehicle are pushed to output objects
-DetectedObject FrontVehicleVelocityEstimator::filterFrontVehicle(
-  DetectedObjects::ConstSharedPtr objects, LinearRing2d & front_area)
+
+std::pair<FrontVehicleVelocityEstimator::Output, DetectedObject>
+FrontVehicleVelocityEstimator::filterFrontVehicle(
+  DetectedObjects::ConstSharedPtr objects, LinearRing2d & front_area);
 {
+  // Initialize output
+  Output output{};
+  output.objects.header = input.objects->header;
+
   DetectedObject front_vehicle;
   bool is_initialized = false;
 
@@ -74,12 +87,14 @@ DetectedObject FrontVehicleVelocityEstimator::filterFrontVehicle(
       }
     }
   }
-  return front_vehicle;
+  return return {output, front_vehicle};
 }
 
-double FrontVehicleVelocityEstimator::estimateVelocity(
-  DetectedObject & object, PointCloud2::SharedPtr pointcloud, Odometry::ConstSharedPtr odometry)
+PointCloud2::SharedPtr getNearestNeighbor(
+  DetectedObject & object, PointCloud2::SharedPtr pointcloud)
 {
 }
+
+double FrontVehicleVelocityEstimator::estimateVelocity(Odometry::ConstSharedPtr odometry) {}
 
 }  // namespace front_vehicle_velocity_estimator

@@ -68,16 +68,15 @@ private:
 
   // Buffer data
   Param param_{};
-  std::vector<PointCloud2> pointcloud{};
+  std::vector<PointCloud2> nearest_neighbor_pointcloud_vector{};
 
   // Function
   LinearRing2d createBoxArea(const double x_size, const double y_size);
-  DetectedObject filterFrontVehicle(
+  std::pair<Output, DetectedObject> filterFrontVehicle(
     DetectedObjects::ConstSharedPtr objects, LinearRing2d & front_area);
   PointCloud2::SharedPtr pointcloud
   getNearestNeighbor(DetectedObject & object, PointCloud2::SharedPtr pointcloud);
-  double estimateVelocity(
-    DetectedObject & object, PointCloud2::SharedPtr pointcloud, Odometry::ConstSharedPtr odometry);
+  double estimateVelocity(Odometry::ConstSharedPtr odometry);
 };
 
 }  // namespace front_vehicle_velocity_estimator
