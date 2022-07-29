@@ -29,8 +29,8 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
 
   // Get nearest neighbor pointcloud
   output_.nearest_neighbor_pointcloud = getNearestNeighbor(front_vehicle, input.pointcloud);
-  if (nearest_neighbor_pointcloud_vector.size() < param_.moving_average_num) {
-    nearest_neighbor_pointcloud_vector.push_back(output_.nearest_neighbor_pointcloud);
+  if ((int)nearest_neighbor_pointcloud_vector.size() < param_.moving_average_num) {
+    nearest_neighbor_pointcloud_vector.push_back(*output_.nearest_neighbor_pointcloud);
   } else {
   }
 
@@ -101,7 +101,7 @@ PointCloud2::SharedPtr FrontVehicleVelocityEstimator::getNearestNeighbor(
 {
   PointCloud2 nearest_neighbor_pointcloud{};
   nearest_neighbor_pointcloud.header = pointcloud->header;
-  return std::make_shared(nearest_neighbor_pointcloud);
+  return std::make_shared<PointCloud2>(nearest_neighbor_pointcloud);
 }
 
 double FrontVehicleVelocityEstimator::estimateVelocity(Odometry::ConstSharedPtr odometry)

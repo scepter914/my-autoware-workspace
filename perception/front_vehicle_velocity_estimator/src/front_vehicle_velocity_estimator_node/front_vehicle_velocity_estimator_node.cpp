@@ -59,7 +59,7 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
   node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
 
   // Core Parameter
-  core_param_.moving_average_num = declare_parameter<uint>("core_params.moving_average_num", 1);
+  core_param_.moving_average_num = declare_parameter<int>("core_params.moving_average_num", 1);
   core_param_.threshold_pointcloud_z =
     declare_parameter<double>("core_params.threshold_pointcloud_z", 0.5);
 
