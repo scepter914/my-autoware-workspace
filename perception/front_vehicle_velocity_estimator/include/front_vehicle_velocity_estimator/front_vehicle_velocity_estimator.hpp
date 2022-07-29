@@ -73,9 +73,9 @@ private:
   // Function
   LinearRing2d createBoxArea(const double x_size, const double y_size);
   std::pair<Output, DetectedObject> filterFrontVehicle(
-    DetectedObjects::ConstSharedPtr objects, LinearRing2d & front_area);
-  PointCloud2::SharedPtr pointcloud
-  getNearestNeighbor(DetectedObject & object, PointCloud2::SharedPtr pointcloud);
+    DetectedObjects::ConstSharedPtr objects, const LinearRing2d & front_area);
+  PointCloud2::SharedPtr getNearestNeighbor(
+    const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud);
   double estimateVelocity(Odometry::ConstSharedPtr odometry);
 };
 

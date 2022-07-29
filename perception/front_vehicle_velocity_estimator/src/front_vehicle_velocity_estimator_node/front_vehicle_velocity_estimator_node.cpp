@@ -169,7 +169,7 @@ void FrontVehicleVelocityEstimatorNode::onTimer()
 
     // Publish
     pub_objects_->publish(*(output_.objects));
-    pub_nearest_neighbor_pointcloud->publish(*(output_.nearest_neighbor_pointcloud));
+    pub_nearest_neighbor_pointcloud_->publish(*(output_.nearest_neighbor_pointcloud));
   }
 }
 
