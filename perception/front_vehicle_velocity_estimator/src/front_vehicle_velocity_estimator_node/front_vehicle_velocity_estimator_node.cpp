@@ -15,6 +15,8 @@
 
 #include "front_vehicle_velocity_estimator/front_vehicle_velocity_estimator_node.hpp"
 
+#include "rclcpp/rclcpp.hpp"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -23,7 +25,6 @@ using namespace std::literals;
 using std::chrono::duration;
 using std::chrono::duration_cast;
 using std::chrono::nanoseconds;
-using std::placeholders::_1;
 
 namespace
 {
@@ -47,13 +48,14 @@ bool update_param(
 
 namespace front_vehicle_velocity_estimator
 {
+
 FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
   const rclcpp::NodeOptions & node_options)
 : Node("front_vehicle_velocity_estimator", node_options)
 {
   // Parameter Server
   set_param_res_ = this->add_on_set_parameters_callback(
-    std::bind(&FrontVehicleVelocityEstimatorNode::onSetParam, this, _1));
+    std::bind(&FrontVehicleVelocityEstimatorNode::onSetParam, this, std::placeholders::_1));
 
   // Node Parameter
   node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
@@ -63,17 +65,20 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
   core_param_.threshold_pointcloud_z =
     declare_parameter<double>("core_params.threshold_pointcloud_z", 0.5);
 
+  // Core
+  front_vehicle_velocity_estimator_ = std::make_unique<FrontVehicleVelocityEstimator>(get_logger());
+  front_vehicle_velocity_estimator_->setParam(core_param_);
+
   // Subscriber
   sub_pointcloud_ = create_subscription<PointCloud2>(
     "~/input/pointcloud", rclcpp::QoS{1},
-    std::bind(&FrontVehicleVelocityEstimatorNode::onPointcloud, this, _1));
+    std::bind(&FrontVehicleVelocityEstimatorNode::onPointcloud, this, std::placeholders::_1));
   sub_objects_ = create_subscription<DetectedObjects>(
     "~/input/objects", rclcpp::QoS{1},
-    std::bind(&FrontVehicleVelocityEstimatorNode::onObjects, this, _1));
-
+    std::bind(&FrontVehicleVelocityEstimatorNode::onObjects, this, std::placeholders::_1));
   sub_odometry_ = create_subscription<Odometry>(
     "~/input/odometry", rclcpp::QoS{1},
-    std::bind(&FrontVehicleVelocityEstimatorNode::onOdometry, this, _1));
+    std::bind(&FrontVehicleVelocityEstimatorNode::onOdometry, this, std::placeholders::_1));
 
   // Publisher
   pub_objects_ = create_publisher<DetectedObjects>("~/output/objects", 1);
