@@ -42,7 +42,7 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
     estimateVelocity(nearest_neighbor_point, input.pointcloud->header.stamp, input.odometry);
   // Set queue of nearest_neighbor_point
   if ((int)velocity_queue_.size() >= param_.moving_average_num) {
-    double _old_velocity = velocity_queue_.front();
+    velocity_queue_.pop_front();
   }
   velocity_queue_.push_back(now_velocity);
   double velocity = std::accumulate(std::begin(velocity_queue_), std::end(velocity_queue_), 0.0) /
@@ -171,7 +171,8 @@ double FrontVehicleVelocityEstimator::estimateVelocity(
   const pcl::PointXYZ & point, const rclcpp::Time & header_time, Odometry::ConstSharedPtr odometry)
 {
   const double dt = (header_time - prev_time_).seconds();
-  const double velocity = (point.x - prev_point_.x) / dt;
+  const double relative_velocity = (point.x - prev_point_.x) / dt;
+  const double velocity = odometry->twist.twist.linear.x + relative_velocity;
   return velocity;
 }
 
