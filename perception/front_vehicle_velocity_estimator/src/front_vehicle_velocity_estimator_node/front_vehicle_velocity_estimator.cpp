@@ -17,6 +17,7 @@
 
 #include <boost/geometry.hpp>
 
+#include <numeric>
 #include <utility>
 
 namespace front_vehicle_velocity_estimator
@@ -37,17 +38,23 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   pcl::PointXYZ nearest_neighbor_point = getNearestNeighborPoint(front_vehicle, input.pointcloud);
 
   // Estimate velocity
-  double velocity = estimateVelocity(input.odometry, input.pointcloud->header.stamp);
-  RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Velocity: %f", velocity);
-
+  double now_velocity =
+    estimateVelocity(nearest_neighbor_point, input.pointcloud->header.stamp, input.odometry);
   // Set queue of nearest_neighbor_point
   if ((int)velocity_queue_.size() >= param_.moving_average_num) {
     double _old_velocity = velocity_queue_.front();
   }
-  velocity_queue_.push_back(velocity);
+  velocity_queue_.push_back(now_velocity);
+  double velocity = std::accumulate(std::begin(velocity_queue_), std::end(velocity_queue_), 0.0) /
+                    velocity_queue_.size();
+
+  RCLCPP_INFO(
+    rclcpp::get_logger("front_vehicle_velocity_estimator"), "Now Velocity: %f, Ave velocity %f",
+    now_velocity, velocity);
 
   // Set prev_time
   prev_time_ = input.pointcloud->header.stamp;
+  prev_point_ = nearest_neighbor_point;
 
   // Set objects output
   front_vehicle.kinematics.has_twist = true;
@@ -160,9 +167,12 @@ pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighborPoint(
   return nearest_neighbor_point;
 }
 
-double FrontVehicleVelocityEstimator::estimateVelocity(Odometry::ConstSharedPtr odometry)
+double FrontVehicleVelocityEstimator::estimateVelocity(
+  const pcl::PointXYZ & point, const rclcpp::Time & header_time, Odometry::ConstSharedPtr odometry)
 {
-  dt = return 0.0;
+  const double dt = (header_time - prev_time_).seconds();
+  const double velocity = (point.x - prev_point_.x) / dt;
+  return velocity;
 }
 
 }  // namespace front_vehicle_velocity_estimator

@@ -82,7 +82,9 @@ private:
     DetectedObjects::ConstSharedPtr objects, const LinearRing2d & front_area);
   pcl::PointXYZ getNearestNeighborPoint(
     const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud);
-  double estimateVelocity(Odometry::ConstSharedPtr odometry);
+  double estimateVelocity(
+    const pcl::PointXYZ & point, const rclcpp::Time & header_time,
+    Odometry::ConstSharedPtr odometry);
 };
 
 }  // namespace front_vehicle_velocity_estimator
