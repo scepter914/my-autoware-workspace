@@ -71,13 +71,16 @@ private:
 
   // Buffer data
   Param param_{};
-  std::deque<pcl::PointXYZ> nearest_neighbor_point_queue{};
+  std::deque<double> velocity_queue_{};
+  rclcpp::Time prev_time_;
+  pcl::PointXYZ prev_point_;
 
   // Function
   LinearRing2d createBoxArea(const double x_size, const double y_size);
+  LinearRing2d createObjectArea(const DetectedObject & object);
   std::pair<Output, DetectedObject> filterFrontVehicle(
     DetectedObjects::ConstSharedPtr objects, const LinearRing2d & front_area);
-  pcl::PointXYZ getNearestNeighbor(
+  pcl::PointXYZ getNearestNeighborPoint(
     const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud);
   double estimateVelocity(Odometry::ConstSharedPtr odometry);
 };

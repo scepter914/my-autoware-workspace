@@ -15,6 +15,10 @@
 
 #include "front_vehicle_velocity_estimator/front_vehicle_velocity_estimator.hpp"
 
+#include <boost/geometry.hpp>
+
+#include <utility>
+
 namespace front_vehicle_velocity_estimator
 {
 FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
@@ -22,37 +26,41 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
 {
   // Filter front vehicle
   LinearRing2d front_area = createBoxArea(50.0, 4.0);
-  // Output output_{};
-  // DetectedObject front_vehicle{};
-  auto [output_, front_vehicle] = filterFrontVehicle(input.objects, front_area);
+  Output output_{};
+  DetectedObject front_vehicle{};
+  auto p_ = filterFrontVehicle(input.objects, front_area);
+  output_ = p_.first;
+  front_vehicle = p_.second;
   // RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug: %d", 0);
 
   // Get nearest neighbor pointcloud
-  pcl::PointXYZ nearest_neighbor_point = getNearestNeighbor(front_vehicle, input.pointcloud);
-
-  // Set output
-  pcl::PointCloud<pcl::PointXYZ> output_pointcloud;
-  output_pointcloud.points.push_back(nearest_neighbor_point);
-  auto pointcloud_msg = output_pointcloud.makeShared();
-  // pcl::toROSMsg(output_pointcloud, *(output_.nearest_neighbor_pointcloud));
-  output_.nearest_neighbor_pointcloud = pointcloud_msg;
-
-  // Set queue of nearest_neighbor_point
-  if ((int)nearest_neighbor_point_queue.size() >= param_.moving_average_num) {
-    auto _old_point = nearest_neighbor_point_queue.pop_front();
-  }
-  nearest_neighbor_point_queue.push_back(*output_.nearest_neighbor_pointcloud);
+  pcl::PointXYZ nearest_neighbor_point = getNearestNeighborPoint(front_vehicle, input.pointcloud);
 
   // Estimate velocity
-  double velocity = estimateVelocity(input.odometry);
+  double velocity = estimateVelocity(input.odometry, input.pointcloud->header.stamp);
+  RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Velocity: %f", velocity);
 
+  // Set queue of nearest_neighbor_point
+  if ((int)velocity_queue_.size() >= param_.moving_average_num) {
+    double _old_velocity = velocity_queue_.front();
+  }
+  velocity_queue_.push_back(velocity);
+
+  // Set prev_time
+  prev_time_ = input.pointcloud->header.stamp;
+
+  // Set objects output
   front_vehicle.kinematics.has_twist = true;
   front_vehicle.kinematics.twist_with_covariance.twist.linear.x = velocity;
   front_vehicle.kinematics.has_twist_covariance = true;
   front_vehicle.kinematics.twist_with_covariance.covariance.at(0) = 1.0;
   output_.objects->objects.emplace_back(front_vehicle);
 
-  RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Velocity: %f", velocity);
+  // Set nearest_neighbor_pointcloud output for debug
+  pcl::PointCloud<pcl::PointXYZ> output_pointcloud;
+  output_pointcloud.points.push_back(nearest_neighbor_point);
+  pcl::toROSMsg(output_pointcloud, *(output_.nearest_neighbor_pointcloud));
+  output_.nearest_neighbor_pointcloud->header = input.pointcloud->header;
 
   return output_;
 }
@@ -69,9 +77,30 @@ LinearRing2d FrontVehicleVelocityEstimator::createBoxArea(const double x_size, c
   return box;
 }
 
+// Create object area
+LinearRing2d FrontVehicleVelocityEstimator::createObjectArea(const DetectedObject & object)
+{
+  Point2d object_size{object.shape.dimensions.x, object.shape.dimensions.y};
+  const double x_front = object_size.x() / 2.0;
+  const double x_rear = -object_size.x() / 2.0;
+  const double y_left = object_size.y() / 2.0;
+  const double y_right = -object_size.y() / 2.0;
+
+  LinearRing2d box{};
+  box.push_back(Point2d{x_front, y_left});
+  box.push_back(Point2d{x_front, y_right});
+  box.push_back(Point2d{x_rear, y_right});
+  box.push_back(Point2d{x_rear, y_left});
+  box.push_back(Point2d{x_front, y_left});
+
+  LinearRing2d transformed_box = tier4_autoware_utils::transformVector(
+    box, tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
+
+  return transformed_box;
+}
+
 // Filter for a front vehicle.
 // Objects except the front vehicle are pushed to output objects
-
 std::pair<FrontVehicleVelocityEstimator::Output, DetectedObject>
 FrontVehicleVelocityEstimator::filterFrontVehicle(
   DetectedObjects::ConstSharedPtr objects, const LinearRing2d & front_area)
@@ -102,10 +131,10 @@ FrontVehicleVelocityEstimator::filterFrontVehicle(
       }
     }
   }
-  return std::pair(output_, front_vehicle);
+  return std::pair<FrontVehicleVelocityEstimator::Output, DetectedObject>(output_, front_vehicle);
 }
 
-pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighbor(
+pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighborPoint(
   const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud)
 {
   pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_msg(new pcl::PointCloud<pcl::PointXYZ>);
@@ -116,8 +145,10 @@ pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighbor(
   bool is_initialized = false;
 
   for (const auto & point : *pcl_msg) {
+    LinearRing2d object_ring_2d = createObjectArea(object);
     Point2d point_{point.x, point.y};
-    if (boost::geometry::within(point_, object_ring_2d)) {
+    if (
+      boost::geometry::within(point_, object_ring_2d) && point.z > param_.threshold_pointcloud_z) {
       if (!is_initialized) {
         nearest_neighbor_point = point;
       } else if (point.x < nearest_neighbor_point.x) {
@@ -131,7 +162,7 @@ pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighbor(
 
 double FrontVehicleVelocityEstimator::estimateVelocity(Odometry::ConstSharedPtr odometry)
 {
-  return 0.0;
+  dt = return 0.0;
 }
 
 }  // namespace front_vehicle_velocity_estimator
