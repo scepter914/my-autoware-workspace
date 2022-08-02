@@ -26,39 +26,34 @@ namespace front_vehicle_velocity_estimator
 FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   const FrontVehicleVelocityEstimator::Input & input)
 {
-  RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug %d", 1);
   // Filter front vehicle
   LinearRing2d front_area = createBoxArea(50.0, 4.0);
-  RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug %d", 2);
   Output output_{};
   DetectedObject front_vehicle{};
   auto p_ = filterFrontVehicle(input.objects, front_area);
   output_.objects = *(p_.first);
   front_vehicle = p_.second;
-  RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug %d", 3);
 
   // Get nearest neighbor pointcloud
   pcl::PointXYZ nearest_neighbor_point = getNearestNeighborPoint(front_vehicle, input.pointcloud);
 
-  RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug %d", 4);
   // Estimate velocity
-  double now_velocity =
-    estimateVelocity(nearest_neighbor_point, input.pointcloud->header.stamp, input.odometry);
-  RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug %d", 5);
+  double now_velocity;
+  if (velocity_queue_.size() == 0) {
+    now_velocity = 0.0;
+  } else {
+    now_velocity =
+      estimateVelocity(nearest_neighbor_point, input.pointcloud->header.stamp, input.odometry);
+  }
 
   // Set queue of nearest_neighbor_point
   if ((int)velocity_queue_.size() >= param_.moving_average_num) {
     velocity_queue_.pop_front();
   }
+
   velocity_queue_.push_back(now_velocity);
-  RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug %d", 6);
   double velocity = std::accumulate(std::begin(velocity_queue_), std::end(velocity_queue_), 0.0) /
                     velocity_queue_.size();
-  RCLCPP_INFO(rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug %d", 7);
-
-  RCLCPP_INFO(
-    rclcpp::get_logger("front_vehicle_velocity_estimator"), "Now Velocity: %f, Ave velocity %f",
-    now_velocity, velocity);
 
   // Set prev_time
   prev_time_ = input.pointcloud->header.stamp;
@@ -74,6 +69,7 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   // Set nearest_neighbor_pointcloud output for debug
   pcl::PointCloud<pcl::PointXYZ> output_pointcloud;
   output_pointcloud.points.push_back(nearest_neighbor_point);
+
   pcl::toROSMsg(output_pointcloud, output_.nearest_neighbor_pointcloud);
   output_.nearest_neighbor_pointcloud.header = input.pointcloud->header;
 
@@ -179,7 +175,8 @@ pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighborPoint(
 double FrontVehicleVelocityEstimator::estimateVelocity(
   const pcl::PointXYZ & point, const rclcpp::Time & header_time, Odometry::ConstSharedPtr odometry)
 {
-  const double dt = (header_time - prev_time_).seconds();
+  auto time_diff = header_time - prev_time_;
+  const double dt = time_diff.seconds();
   const double relative_velocity = (point.x - prev_point_.x) / dt;
   const double velocity = odometry->twist.twist.linear.x + relative_velocity;
   return velocity;
