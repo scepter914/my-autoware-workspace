@@ -94,9 +94,6 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
 void FrontVehicleVelocityEstimatorNode::onPointcloud(const PointCloud2::ConstSharedPtr msg)
 {
   pointcloud_data_ = msg;
-  RCLCPP_INFO(
-    rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug %s",
-    msg->header.frame_id.c_str());
 }
 
 void FrontVehicleVelocityEstimatorNode::onObjects(const DetectedObjects::ConstSharedPtr msg)
@@ -179,8 +176,8 @@ void FrontVehicleVelocityEstimatorNode::onTimer()
     output_ = front_vehicle_velocity_estimator_->update(input_);
 
     // Publish
-    pub_objects_->publish(*(output_.objects));
-    pub_nearest_neighbor_pointcloud_->publish(*(output_.nearest_neighbor_pointcloud));
+    pub_objects_->publish(output_.objects);
+    pub_nearest_neighbor_pointcloud_->publish(output_.nearest_neighbor_pointcloud);
   }
 }
 
