@@ -71,7 +71,8 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
 
   // Subscriber
   sub_pointcloud_ = create_subscription<PointCloud2>(
-    "~/input/pointcloud", rclcpp::QoS{1},
+    // "~/input/pointcloud", rclcpp::QoS{1},
+    "~/input/pointcloud", rclcpp::SensorDataQoS(),
     std::bind(&FrontVehicleVelocityEstimatorNode::onPointcloud, this, std::placeholders::_1));
   sub_objects_ = create_subscription<DetectedObjects>(
     "~/input/objects", rclcpp::QoS{1},
@@ -93,7 +94,11 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
 void FrontVehicleVelocityEstimatorNode::onPointcloud(const PointCloud2::ConstSharedPtr msg)
 {
   pointcloud_data_ = msg;
+  RCLCPP_INFO(
+    rclcpp::get_logger("front_vehicle_velocity_estimator"), "Debug %s",
+    msg->header.frame_id.c_str());
 }
+
 void FrontVehicleVelocityEstimatorNode::onObjects(const DetectedObjects::ConstSharedPtr msg)
 {
   objects_data_ = msg;
@@ -144,12 +149,12 @@ rcl_interfaces::msg::SetParametersResult FrontVehicleVelocityEstimatorNode::onSe
 
 bool FrontVehicleVelocityEstimatorNode::isDataReady()
 {
-  if (!pointcloud_data_) {
-    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for pointcloud msg...");
-    return false;
-  }
   if (!objects_data_) {
     RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for objects msg...");
+    return false;
+  }
+  if (!pointcloud_data_) {
+    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for pointcloud msg...");
     return false;
   }
   return true;
@@ -168,6 +173,7 @@ void FrontVehicleVelocityEstimatorNode::onTimer()
     // Set input data
     input_.objects = objects_data_;
     input_.pointcloud = pointcloud_data_;
+    input_.odometry = odometry_data_;
 
     // Update
     output_ = front_vehicle_velocity_estimator_->update(input_);
