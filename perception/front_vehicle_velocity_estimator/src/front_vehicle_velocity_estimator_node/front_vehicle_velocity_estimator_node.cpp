@@ -71,7 +71,6 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
 
   // Subscriber
   sub_pointcloud_ = create_subscription<PointCloud2>(
-    // "~/input/pointcloud", rclcpp::QoS{1},
     "~/input/pointcloud", rclcpp::SensorDataQoS(),
     std::bind(&FrontVehicleVelocityEstimatorNode::onPointcloud, this, std::placeholders::_1));
   sub_objects_ = create_subscription<DetectedObjects>(
@@ -83,6 +82,8 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
 
   // Publisher
   pub_objects_ = create_publisher<DetectedObjects>("~/output/objects", 1);
+  pub_nearest_neighbor_pointcloud_ =
+    create_publisher<PointCloud2>("~/debug/nearest_neighbor_pointcloud", 1);
 
   // Timer
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();

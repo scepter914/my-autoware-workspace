@@ -72,8 +72,8 @@ private:
   // Buffer data
   Param param_{};
   std::deque<double> velocity_queue_{};
-  rclcpp::Time prev_time_;
-  pcl::PointXYZ prev_point_;
+  rclcpp::Time prev_time_{};
+  pcl::PointXYZ prev_point_{};
 
   // Function
   LinearRing2d createBoxArea(const double x_size, const double y_size);
