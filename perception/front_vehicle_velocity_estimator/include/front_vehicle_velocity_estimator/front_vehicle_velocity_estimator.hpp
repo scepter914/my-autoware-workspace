@@ -33,6 +33,7 @@
 namespace front_vehicle_velocity_estimator
 {
 using autoware_auto_perception_msgs::msg::DetectedObject;
+using autoware_auto_perception_msgs::msg::DetectedObjectKinematics;
 using autoware_auto_perception_msgs::msg::DetectedObjects;
 using nav_msgs::msg::Odometry;
 using sensor_msgs::msg::PointCloud2;
@@ -68,6 +69,13 @@ public:
   Output update(const Input & input);
 
 private:
+  struct ObjectsWithFrontVehicle
+  {
+    DetectedObjects::SharedPtr objects_without_front_vehicle{};
+    DetectedObject front_vehicle{};
+    bool is_front_vehicle = false;
+  };
+
   rclcpp::Logger logger_;
 
   // Buffer data
@@ -79,7 +87,7 @@ private:
   // Function
   LinearRing2d createBoxArea(const double x_size, const double y_size);
   LinearRing2d createObjectArea(const DetectedObject & object);
-  std::pair<DetectedObjects::SharedPtr, DetectedObject> filterFrontVehicle(
+  ObjectsWithFrontVehicle filterFrontVehicle(
     DetectedObjects::ConstSharedPtr objects, const LinearRing2d & front_area);
   pcl::PointXYZ getNearestNeighborPoint(
     const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud);

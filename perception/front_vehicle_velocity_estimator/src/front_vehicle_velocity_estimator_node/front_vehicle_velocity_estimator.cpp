@@ -26,16 +26,16 @@ namespace front_vehicle_velocity_estimator
 FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   const FrontVehicleVelocityEstimator::Input & input)
 {
+  Output output_{};
+  ObjectsWithFrontVehicle objects_with_front_vehicle{};
+
   // Filter front vehicle
   LinearRing2d front_area = createBoxArea(50.0, 4.0);
-  Output output_{};
-  DetectedObject front_vehicle{};
-  auto p_ = filterFrontVehicle(input.objects, front_area);
-  output_.objects = *(p_.first);
-  front_vehicle = p_.second;
+  objects_with_front_vehicle = filterFrontVehicle(input.objects, front_area);
 
   // Get nearest neighbor pointcloud
-  pcl::PointXYZ nearest_neighbor_point = getNearestNeighborPoint(front_vehicle, input.pointcloud);
+  pcl::PointXYZ nearest_neighbor_point =
+    getNearestNeighborPoint(objects_with_front_vehicle.front_vehicle, input.pointcloud);
 
   // Estimate velocity
   double now_velocity;
@@ -44,9 +44,9 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   } else {
     now_velocity =
       estimateVelocity(nearest_neighbor_point, input.pointcloud->header.stamp, input.odometry);
+    now_velocity = std::max(
+      std::min(now_velocity, param_.threshold_abs_velocity), -param_.threshold_abs_velocity);
   }
-  now_velocity =
-    std::max(std::min(now_velocity, param_.threshold_abs_velocity), -param_.threshold_abs_velocity);
   if (!isfinite(now_velocity)) {
     now_velocity = 0.0;
   }
@@ -68,11 +68,17 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   prev_point_ = nearest_neighbor_point;
 
   // Set objects output
-  front_vehicle.kinematics.has_twist = true;
-  front_vehicle.kinematics.twist_with_covariance.twist.linear.x = velocity;
-  front_vehicle.kinematics.has_twist_covariance = true;
-  front_vehicle.kinematics.twist_with_covariance.covariance.at(0) = 1.0;
-  output_.objects.objects.emplace_back(front_vehicle);
+  output_.objects = *(objects_with_front_vehicle.objects_without_front_vehicle);
+  if (objects_with_front_vehicle.is_front_vehicle) {
+    // Set kinematics information for front vehicle
+    DetectedObjectKinematics kinematics;
+    kinematics.has_twist = true;
+    kinematics.twist_with_covariance.twist.linear.x = velocity;
+    kinematics.has_twist_covariance = true;
+    kinematics.twist_with_covariance.covariance.at(0) = 1.0;
+    objects_with_front_vehicle.front_vehicle.kinematics = kinematics;
+    output_.objects.objects.emplace_back(objects_with_front_vehicle.front_vehicle);
+  }
 
   // Set nearest_neighbor_pointcloud output for debug
   pcl::PointCloud<pcl::PointXYZ> output_pointcloud;
@@ -119,16 +125,16 @@ LinearRing2d FrontVehicleVelocityEstimator::createObjectArea(const DetectedObjec
 
 // Filter for a front vehicle.
 // Objects except the front vehicle are pushed to output objects
-std::pair<DetectedObjects::SharedPtr, DetectedObject>
+FrontVehicleVelocityEstimator::ObjectsWithFrontVehicle
 FrontVehicleVelocityEstimator::filterFrontVehicle(
   DetectedObjects::ConstSharedPtr objects, const LinearRing2d & front_area)
 {
   // Initialize output
+  FrontVehicleVelocityEstimator::ObjectsWithFrontVehicle output{};
+  output.is_front_vehicle = false;
+
   DetectedObjects output_objects_{};
   output_objects_.header = objects->header;
-
-  DetectedObject front_vehicle{};
-  bool is_initialized = false;
 
   for (const auto & object : objects->objects) {
     auto position = object.kinematics.pose_with_covariance.pose.position;
@@ -136,21 +142,22 @@ FrontVehicleVelocityEstimator::filterFrontVehicle(
 
     if (!boost::geometry::within(object_point, front_area)) {
       output_objects_.objects.emplace_back(object);
-    } else if (!is_initialized) {
-      front_vehicle = object;
-      is_initialized = true;
+    } else if (!output.is_front_vehicle) {
+      output.front_vehicle = object;
+      output.is_front_vehicle = true;
     } else {
-      auto front_vehicle_position = front_vehicle.kinematics.pose_with_covariance.pose.position;
+      auto front_vehicle_position =
+        output.front_vehicle.kinematics.pose_with_covariance.pose.position;
       if (position.x < front_vehicle_position.x) {
-        output_objects_.objects.emplace_back(front_vehicle);
-        front_vehicle = object;
+        output_objects_.objects.emplace_back(output.front_vehicle);
+        output.front_vehicle = object;
       } else {
         output_objects_.objects.emplace_back(object);
       }
     }
   }
-  auto output_ptr = std::make_shared<DetectedObjects>(output_objects_);
-  return std::pair<DetectedObjects::SharedPtr, DetectedObject>(output_ptr, front_vehicle);
+  output.objects_without_front_vehicle = std::make_shared<DetectedObjects>(output_objects_);
+  return output;
 }
 
 pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighborPoint(
