@@ -46,7 +46,7 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
       estimateVelocity(nearest_neighbor_point, input.pointcloud->header.stamp, input.odometry);
   }
   now_velocity =
-    std::min(std::max(now_velocity, param_.threshold_abs_velocity), -param_.threshold_abs_velocity);
+    std::max(std::min(now_velocity, param_.threshold_abs_velocity), -param_.threshold_abs_velocity);
 
   // Set queue of nearest_neighbor_point
   if ((int)velocity_queue_.size() >= param_.moving_average_num) {
