@@ -53,8 +53,8 @@ public:
 
   struct Output
   {
-    DetectedObjects::SharedPtr objects{};
-    PointCloud2::SharedPtr nearest_neighbor_pointcloud{};
+    DetectedObjects objects{};
+    PointCloud2 nearest_neighbor_pointcloud{};
   };
 
   struct Param
@@ -78,7 +78,7 @@ private:
   // Function
   LinearRing2d createBoxArea(const double x_size, const double y_size);
   LinearRing2d createObjectArea(const DetectedObject & object);
-  std::pair<Output, DetectedObject> filterFrontVehicle(
+  std::pair<DetectedObjects::SharedPtr, DetectedObject> filterFrontVehicle(
     DetectedObjects::ConstSharedPtr objects, const LinearRing2d & front_area);
   pcl::PointXYZ getNearestNeighborPoint(
     const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud);
