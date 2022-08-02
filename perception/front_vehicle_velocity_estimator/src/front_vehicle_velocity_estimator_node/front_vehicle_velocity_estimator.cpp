@@ -47,6 +47,9 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   }
   now_velocity =
     std::max(std::min(now_velocity, param_.threshold_abs_velocity), -param_.threshold_abs_velocity);
+  if (!isfinite(now_velocity)) {
+    now_velocity = 0.0;
+  }
 
   // Set queue of nearest_neighbor_point
   if ((int)velocity_queue_.size() >= param_.moving_average_num) {
