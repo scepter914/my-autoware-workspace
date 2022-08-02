@@ -45,6 +45,8 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
     now_velocity =
       estimateVelocity(nearest_neighbor_point, input.pointcloud->header.stamp, input.odometry);
   }
+  now_velocity =
+    std::min(std::max(now_velocity, param_.threshold_abs_velocity), -param_.threshold_abs_velocity);
 
   // Set queue of nearest_neighbor_point
   if ((int)velocity_queue_.size() >= param_.moving_average_num) {
@@ -54,6 +56,9 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   velocity_queue_.push_back(now_velocity);
   double velocity = std::accumulate(std::begin(velocity_queue_), std::end(velocity_queue_), 0.0) /
                     velocity_queue_.size();
+  RCLCPP_INFO(
+    rclcpp::get_logger("front_vehicle_velocity_estimator"),
+    "Now Velocity: %f km/h, Ave velocity %f km/h", now_velocity * 3.6, velocity * 3.6);
 
   // Set prev_time
   prev_time_ = input.pointcloud->header.stamp;
@@ -69,7 +74,6 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   // Set nearest_neighbor_pointcloud output for debug
   pcl::PointCloud<pcl::PointXYZ> output_pointcloud;
   output_pointcloud.points.push_back(nearest_neighbor_point);
-
   pcl::toROSMsg(output_pointcloud, output_.nearest_neighbor_pointcloud);
   output_.nearest_neighbor_pointcloud.header = input.pointcloud->header;
 
