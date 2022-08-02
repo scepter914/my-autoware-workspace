@@ -6,6 +6,7 @@
 
   <!-- Output -->
   <arg name="output/objects" default="~/output/objects" />
+  <arg name="debug/nearest_neighbor_pointcloud" default="~/debug/nearest_neighbor_pointcloud" />
 
   <!-- Parameter -->
   <arg name="core_params.moving_average_num" default="1" />
@@ -19,6 +20,7 @@
 
     <!-- Output -->
     <remap from="~/output/objects" to="$(var output/objects)"/>
+    <remap from="~/debug/nearest_neighbor_pointcloud" to="$(var debug/nearest_neighbor_pointcloud)"/>
 
     <!-- Parameter -->
     <param name="core_params.moving_average_num" value="$(var core_params.moving_average_num)"/>
