@@ -65,7 +65,9 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
   core_param_.threshold_pointcloud_z =
     declare_parameter<float>("core_params.threshold_pointcloud_z", 0.5);
   core_param_.threshold_relative_velocity =
-    declare_parameter<double>("core_params.threshold_relative__velocity", 10.0);
+    declare_parameter<double>("core_params.threshold_relative_velocity", 10.0);
+  core_param_.threshold_absolute_velocity =
+    declare_parameter<double>("core_params.threshold_absolute_velocity", 17.0);
 
   // Core
   front_vehicle_velocity_estimator_ = std::make_unique<FrontVehicleVelocityEstimator>(get_logger());
@@ -132,6 +134,8 @@ rcl_interfaces::msg::SetParametersResult FrontVehicleVelocityEstimatorNode::onSe
       update_param(params, "core_params.threshold_pointcloud_z", p.threshold_pointcloud_z);
       update_param(
         params, "core_params.threshold_relative_velocity", p.threshold_relative_velocity);
+      update_param(
+        params, "core_params.threshold_absolute_velocity", p.threshold_absolute_velocity);
 
       // Set parameter to instance
       if (front_vehicle_velocity_estimator_) {

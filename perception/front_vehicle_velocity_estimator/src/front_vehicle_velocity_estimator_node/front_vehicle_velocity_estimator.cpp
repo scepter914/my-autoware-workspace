@@ -49,6 +49,9 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   double now_relative_velocity =
     estimateRelativeVelocity(nearest_neighbor_point, input.pointcloud->header.stamp);
 
+  // Estimate absolute velocity
+  double now_absolute_velocity = estimateAbsoluteVelocity(now_relative_velocity, input.odometry);
+
   // Validate velocity
   if (
     !isfinite(now_relative_velocity) ||
@@ -57,9 +60,7 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
     output_.objects.objects.emplace_back(objects_with_front_vehicle.front_vehicle);
     return output_;
   }
-
-  // Estimate absolute velocity
-  double now_absolute_velocity = estimateAbsoluteVelocity(now_relative_velocity, input.odometry);
+  now_absolute_velocity = std::min(param_.threshold_absolute_velocity, now_absolute_velocity);
 
   // Set queue of nearest_neighbor_point
   if ((int)velocity_queue_.size() >= param_.moving_average_num) {
@@ -70,10 +71,10 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   velocity_queue_.push_back(now_absolute_velocity);
   double velocity = std::accumulate(std::begin(velocity_queue_), std::end(velocity_queue_), 0.0) /
                     velocity_queue_.size();
-  RCLCPP_INFO(
-    rclcpp::get_logger("front_vehicle_velocity_estimator"), "x=%f, v=%f km/h, v_a=%fkm/h",
-    objects_with_front_vehicle.front_vehicle.kinematics.pose_with_covariance.pose.position.x,
-    now_absolute_velocity * 3.6, velocity * 3.6);
+  // RCLCPP_INFO(
+  //   rclcpp::get_logger("front_vehicle_velocity_estimator"), "x=%f, v=%f km/h, v_a=%fkm/h",
+  //   objects_with_front_vehicle.front_vehicle.kinematics.pose_with_covariance.pose.position.x,
+  //   now_absolute_velocity * 3.6, velocity * 3.6);
 
   // Set kinematics information for front vehicle
   objects_with_front_vehicle.front_vehicle.kinematics.has_twist = true;

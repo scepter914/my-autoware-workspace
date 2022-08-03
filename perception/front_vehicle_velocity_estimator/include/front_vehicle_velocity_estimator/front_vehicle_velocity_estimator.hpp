@@ -64,6 +64,7 @@ public:
     int moving_average_num{};
     float threshold_pointcloud_z{};
     double threshold_relative_velocity{};
+    double threshold_absolute_velocity{};
   };
 
   void setParam(const Param & param) { param_ = param; }
