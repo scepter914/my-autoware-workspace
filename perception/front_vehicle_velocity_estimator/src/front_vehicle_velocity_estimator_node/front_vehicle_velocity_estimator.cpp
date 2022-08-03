@@ -71,12 +71,12 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   output_.objects = *(objects_with_front_vehicle.objects_without_front_vehicle);
   if (objects_with_front_vehicle.is_front_vehicle) {
     // Set kinematics information for front vehicle
-    DetectedObjectKinematics kinematics;
-    kinematics.has_twist = true;
-    kinematics.twist_with_covariance.twist.linear.x = velocity;
-    kinematics.has_twist_covariance = true;
-    kinematics.twist_with_covariance.covariance.at(0) = 1.0;
-    objects_with_front_vehicle.front_vehicle.kinematics = kinematics;
+    objects_with_front_vehicle.front_vehicle.kinematics.has_twist = true;
+    objects_with_front_vehicle.front_vehicle.kinematics.twist_with_covariance.twist.linear.x =
+      velocity;
+    objects_with_front_vehicle.front_vehicle.kinematics.has_twist_covariance = true;
+    objects_with_front_vehicle.front_vehicle.kinematics.twist_with_covariance.covariance.at(0) =
+      1.0;
     output_.objects.objects.emplace_back(objects_with_front_vehicle.front_vehicle);
   }
 
