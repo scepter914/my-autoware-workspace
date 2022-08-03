@@ -35,6 +35,7 @@ namespace front_vehicle_velocity_estimator
 using autoware_auto_perception_msgs::msg::DetectedObject;
 using autoware_auto_perception_msgs::msg::DetectedObjectKinematics;
 using autoware_auto_perception_msgs::msg::DetectedObjects;
+using autoware_auto_perception_msgs::msg::ObjectClassification;
 using nav_msgs::msg::Odometry;
 using sensor_msgs::msg::PointCloud2;
 using tier4_autoware_utils::LinearRing2d;
@@ -62,7 +63,7 @@ public:
   {
     int moving_average_num{};
     float threshold_pointcloud_z{};
-    double threshold_abs_velocity{};
+    double threshold_relative_velocity{};
   };
 
   void setParam(const Param & param) { param_ = param; }
@@ -94,6 +95,7 @@ private:
   double estimateVelocity(
     const pcl::PointXYZ & point, const rclcpp::Time & header_time,
     Odometry::ConstSharedPtr odometry);
+  bool isFrontVehicle(const DetectedObject & object, const LinearRing2d & front_area);
 };
 
 }  // namespace front_vehicle_velocity_estimator
