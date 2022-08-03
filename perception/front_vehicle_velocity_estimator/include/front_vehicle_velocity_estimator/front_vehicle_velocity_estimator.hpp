@@ -92,9 +92,9 @@ private:
     DetectedObjects::ConstSharedPtr objects, const LinearRing2d & front_area);
   pcl::PointXYZ getNearestNeighborPoint(
     const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud);
-  double estimateVelocity(
-    const pcl::PointXYZ & point, const rclcpp::Time & header_time,
-    Odometry::ConstSharedPtr odometry);
+  double estimateRelativeVelocity(const pcl::PointXYZ & point, const rclcpp::Time & header_time);
+  double estimateAbsoluteVelocity(
+    const double relative_velocity, Odometry::ConstSharedPtr odometry);
   bool isFrontVehicle(const DetectedObject & object, const LinearRing2d & front_area);
 };
 

@@ -40,47 +40,50 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   // Set objects output
   output_.objects = *(objects_with_front_vehicle.objects_without_front_vehicle);
 
-  if (objects_with_front_vehicle.is_front_vehicle) {
-    // Estimate velocity
-    double now_velocity;
-    if (velocity_queue_.size() == 0) {
-      now_velocity = 0.0;
-    } else {
-      now_velocity =
-        estimateVelocity(nearest_neighbor_point, input.pointcloud->header.stamp, input.odometry);
-    }
-
-    // Set queue of nearest_neighbor_point
-    if ((int)velocity_queue_.size() >= param_.moving_average_num) {
-      velocity_queue_.pop_front();
-    }
+  // If there is no front vehicle, return output
+  if (!objects_with_front_vehicle.is_front_vehicle) {
+    return output_;
   }
 
-  if (!isfinite(now_velocity)) {
-    // Validate velocity
-    now_velocity = 0.0;
+  // Estimate relative velocity
+  double now_relative_velocity =
+    estimateRelativeVelocity(nearest_neighbor_point, input.pointcloud->header.stamp);
+
+  // Validate velocity
+  if (
+    !isfinite(now_relative_velocity) ||
+    now_relative_velocity > param_.threshold_relative_velocity ||
+    now_relative_velocity < -param_.threshold_relative_velocity) {
+    output_.objects.objects.emplace_back(objects_with_front_vehicle.front_vehicle);
+    return output_;
   }
-  now_velocity = std::max(std::min(now_velocity, param_.threshold_relative_velocity), 0.0);
-  velocity_queue_.push_back(now_velocity);
+
+  // Estimate absolute velocity
+  double now_absolute_velocity = estimateAbsoluteVelocity(now_relative_velocity, input.odometry);
+
+  // Set queue of nearest_neighbor_point
+  if ((int)velocity_queue_.size() >= param_.moving_average_num) {
+    velocity_queue_.pop_front();
+  }
+
+  // Estimate average velocity
+  velocity_queue_.push_back(now_absolute_velocity);
   double velocity = std::accumulate(std::begin(velocity_queue_), std::end(velocity_queue_), 0.0) /
                     velocity_queue_.size();
   RCLCPP_INFO(
     rclcpp::get_logger("front_vehicle_velocity_estimator"), "x=%f, v=%f km/h, v_a=%fkm/h",
     objects_with_front_vehicle.front_vehicle.kinematics.pose_with_covariance.pose.position.x,
-    now_velocity * 3.6, velocity * 3.6);
+    now_absolute_velocity * 3.6, velocity * 3.6);
 
-  if (objects_with_front_vehicle.is_front_vehicle) {
-    // Set kinematics information for front vehicle
-    objects_with_front_vehicle.front_vehicle.kinematics.has_twist = true;
-    objects_with_front_vehicle.front_vehicle.kinematics.twist_with_covariance.twist.linear.x =
-      velocity;
-    objects_with_front_vehicle.front_vehicle.kinematics.has_twist_covariance = true;
-    objects_with_front_vehicle.front_vehicle.kinematics.twist_with_covariance.covariance.at(0) =
-      1.0;
-    output_.objects.objects.emplace_back(objects_with_front_vehicle.front_vehicle);
-  }
+  // Set kinematics information for front vehicle
+  objects_with_front_vehicle.front_vehicle.kinematics.has_twist = true;
+  objects_with_front_vehicle.front_vehicle.kinematics.twist_with_covariance.twist.linear.x =
+    velocity;
+  objects_with_front_vehicle.front_vehicle.kinematics.has_twist_covariance = true;
+  objects_with_front_vehicle.front_vehicle.kinematics.twist_with_covariance.covariance.at(0) = 1.0;
+  output_.objects.objects.emplace_back(objects_with_front_vehicle.front_vehicle);
 
-  // Set prev_time
+  // Set previous data buffer
   prev_time_ = input.pointcloud->header.stamp;
   prev_point_ = nearest_neighbor_point;
 
@@ -203,13 +206,22 @@ pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighborPoint(
   return nearest_neighbor_point;
 }
 
-double FrontVehicleVelocityEstimator::estimateVelocity(
-  const pcl::PointXYZ & point, const rclcpp::Time & header_time, Odometry::ConstSharedPtr odometry)
+double FrontVehicleVelocityEstimator::estimateRelativeVelocity(
+  const pcl::PointXYZ & point, const rclcpp::Time & header_time)
 {
-  auto time_diff = header_time - prev_time_;
-  const double dt = time_diff.seconds();
+  if (velocity_queue_.size() == 0) {
+    return 0.0;
+  }
+  const double dt = (header_time - prev_time_).seconds();
   const double relative_velocity = (point.x - prev_point_.x) / dt;
-  const double velocity = odometry->twist.twist.linear.x + relative_velocity;
+  return relative_velocity;
+}
+
+double FrontVehicleVelocityEstimator::estimateAbsoluteVelocity(
+  const double relative_velocity, Odometry::ConstSharedPtr odometry)
+{
+  const double velocity = relative_velocity + odometry->twist.twist.linear.x;
+
   return velocity;
 }
 

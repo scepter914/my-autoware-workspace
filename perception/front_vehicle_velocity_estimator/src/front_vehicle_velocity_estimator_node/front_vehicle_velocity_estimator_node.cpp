@@ -64,8 +64,8 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
   core_param_.moving_average_num = declare_parameter<int>("core_params.moving_average_num", 1);
   core_param_.threshold_pointcloud_z =
     declare_parameter<float>("core_params.threshold_pointcloud_z", 0.5);
-  core_param_.threshold_relative__velocity =
-    declare_parameter<double>("core_params.threshold_relative__velocity", 16.0);
+  core_param_.threshold_relative_velocity =
+    declare_parameter<double>("core_params.threshold_relative__velocity", 10.0);
 
   // Core
   front_vehicle_velocity_estimator_ = std::make_unique<FrontVehicleVelocityEstimator>(get_logger());
