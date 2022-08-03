@@ -30,45 +30,45 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   ObjectsWithFrontVehicle objects_with_front_vehicle{};
 
   // Filter front vehicle
-  LinearRing2d front_area = createBoxArea(50.0, 4.0);
+  LinearRing2d front_area = createBoxArea(100.0, 6.0);
   objects_with_front_vehicle = filterFrontVehicle(input.objects, front_area);
 
   // Get nearest neighbor pointcloud
   pcl::PointXYZ nearest_neighbor_point =
     getNearestNeighborPoint(objects_with_front_vehicle.front_vehicle, input.pointcloud);
 
-  // Estimate velocity
-  double now_velocity;
-  if (velocity_queue_.size() == 0) {
-    now_velocity = 0.0;
-  } else {
-    now_velocity =
-      estimateVelocity(nearest_neighbor_point, input.pointcloud->header.stamp, input.odometry);
-    now_velocity = std::max(
-      std::min(now_velocity, param_.threshold_abs_velocity), -param_.threshold_abs_velocity);
+  // Set objects output
+  output_.objects = *(objects_with_front_vehicle.objects_without_front_vehicle);
+
+  if (objects_with_front_vehicle.is_front_vehicle) {
+    // Estimate velocity
+    double now_velocity;
+    if (velocity_queue_.size() == 0) {
+      now_velocity = 0.0;
+    } else {
+      now_velocity =
+        estimateVelocity(nearest_neighbor_point, input.pointcloud->header.stamp, input.odometry);
+    }
+
+    // Set queue of nearest_neighbor_point
+    if ((int)velocity_queue_.size() >= param_.moving_average_num) {
+      velocity_queue_.pop_front();
+    }
   }
+
   if (!isfinite(now_velocity)) {
+    // Validate velocity
     now_velocity = 0.0;
   }
-
-  // Set queue of nearest_neighbor_point
-  if ((int)velocity_queue_.size() >= param_.moving_average_num) {
-    velocity_queue_.pop_front();
-  }
-
+  now_velocity = std::max(std::min(now_velocity, param_.threshold_relative_velocity), 0.0);
   velocity_queue_.push_back(now_velocity);
   double velocity = std::accumulate(std::begin(velocity_queue_), std::end(velocity_queue_), 0.0) /
                     velocity_queue_.size();
   RCLCPP_INFO(
-    rclcpp::get_logger("front_vehicle_velocity_estimator"),
-    "Now Velocity: %f km/h, Ave velocity %f km/h", now_velocity * 3.6, velocity * 3.6);
+    rclcpp::get_logger("front_vehicle_velocity_estimator"), "x=%f, v=%f km/h, v_a=%fkm/h",
+    objects_with_front_vehicle.front_vehicle.kinematics.pose_with_covariance.pose.position.x,
+    now_velocity * 3.6, velocity * 3.6);
 
-  // Set prev_time
-  prev_time_ = input.pointcloud->header.stamp;
-  prev_point_ = nearest_neighbor_point;
-
-  // Set objects output
-  output_.objects = *(objects_with_front_vehicle.objects_without_front_vehicle);
   if (objects_with_front_vehicle.is_front_vehicle) {
     // Set kinematics information for front vehicle
     objects_with_front_vehicle.front_vehicle.kinematics.has_twist = true;
@@ -79,6 +79,10 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
       1.0;
     output_.objects.objects.emplace_back(objects_with_front_vehicle.front_vehicle);
   }
+
+  // Set prev_time
+  prev_time_ = input.pointcloud->header.stamp;
+  prev_point_ = nearest_neighbor_point;
 
   // Set nearest_neighbor_pointcloud output for debug
   pcl::PointCloud<pcl::PointXYZ> output_pointcloud;
@@ -137,10 +141,7 @@ FrontVehicleVelocityEstimator::filterFrontVehicle(
   output_objects_.header = objects->header;
 
   for (const auto & object : objects->objects) {
-    auto position = object.kinematics.pose_with_covariance.pose.position;
-    Point2d object_point{position.x, position.y};
-
-    if (!boost::geometry::within(object_point, front_area)) {
+    if (!isFrontVehicle(object, front_area)) {
       output_objects_.objects.emplace_back(object);
     } else if (!output.is_front_vehicle) {
       output.front_vehicle = object;
@@ -148,7 +149,7 @@ FrontVehicleVelocityEstimator::filterFrontVehicle(
     } else {
       auto front_vehicle_position =
         output.front_vehicle.kinematics.pose_with_covariance.pose.position;
-      if (position.x < front_vehicle_position.x) {
+      if (object.kinematics.pose_with_covariance.pose.position.x < front_vehicle_position.x) {
         output_objects_.objects.emplace_back(output.front_vehicle);
         output.front_vehicle = object;
       } else {
@@ -158,6 +159,22 @@ FrontVehicleVelocityEstimator::filterFrontVehicle(
   }
   output.objects_without_front_vehicle = std::make_shared<DetectedObjects>(output_objects_);
   return output;
+}
+
+bool FrontVehicleVelocityEstimator::isFrontVehicle(
+  const DetectedObject & object, const LinearRing2d & front_area)
+{
+  auto position = object.kinematics.pose_with_covariance.pose.position;
+  auto label = object.classification.at(0).label;
+  Point2d object_point{position.x, position.y};
+  if (
+    !(label == ObjectClassification::UNKNOWN) && !(label == ObjectClassification::PEDESTRIAN) &&
+    !(label == ObjectClassification::BICYCLE) && !(label == ObjectClassification::MOTORCYCLE) &&
+    boost::geometry::within(object_point, front_area)) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighborPoint(
