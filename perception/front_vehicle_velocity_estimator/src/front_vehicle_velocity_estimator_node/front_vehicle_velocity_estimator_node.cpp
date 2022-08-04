@@ -62,8 +62,10 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
 
   // Core Parameter
   core_param_.moving_average_num = declare_parameter<int>("core_params.moving_average_num", 1);
-  core_param_.threshold_pointcloud_z =
-    declare_parameter<float>("core_params.threshold_pointcloud_z", 0.5);
+  core_param_.threshold_pointcloud_z_high =
+    declare_parameter<float>("core_params.threshold_pointcloud_z_high", 1.0f);
+  core_param_.threshold_pointcloud_z_low =
+    declare_parameter<float>("core_params.threshold_pointcloud_z_low", 0.6f);
   core_param_.threshold_relative_velocity =
     declare_parameter<double>("core_params.threshold_relative_velocity", 10.0);
   core_param_.threshold_absolute_velocity =
@@ -131,7 +133,9 @@ rcl_interfaces::msg::SetParametersResult FrontVehicleVelocityEstimatorNode::onSe
 
       // Update params
       update_param(params, "core_params.moving_average_num", p.moving_average_num);
-      update_param(params, "core_params.threshold_pointcloud_z", p.threshold_pointcloud_z);
+      update_param(
+        params, "core_params.threshold_pointcloud_z_high", p.threshold_pointcloud_z_high);
+      update_param(params, "core_params.threshold_pointcloud_z_low", p.threshold_pointcloud_z_low);
       update_param(
         params, "core_params.threshold_relative_velocity", p.threshold_relative_velocity);
       update_param(

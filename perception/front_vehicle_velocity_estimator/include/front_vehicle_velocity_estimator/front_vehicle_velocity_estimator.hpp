@@ -62,7 +62,8 @@ public:
   struct Param
   {
     int moving_average_num{};
-    float threshold_pointcloud_z{};
+    float threshold_pointcloud_z_high{};
+    float threshold_pointcloud_z_low{};
     double threshold_relative_velocity{};
     double threshold_absolute_velocity{};
   };

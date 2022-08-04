@@ -195,7 +195,8 @@ pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighborPoint(
     LinearRing2d object_ring_2d = createObjectArea(object);
     Point2d point_{point.x, point.y};
     if (
-      boost::geometry::within(point_, object_ring_2d) && point.z > param_.threshold_pointcloud_z) {
+      boost::geometry::within(point_, object_ring_2d) &&
+      point.z > param_.threshold_pointcloud_z_low && point.z < param_.threshold_pointcloud_z_high) {
       if (!is_initialized) {
         nearest_neighbor_point = point;
       } else if (point.x < nearest_neighbor_point.x) {
