@@ -88,19 +88,19 @@ private:
   pcl::PointXYZ prev_point_{};
 
   // Function
-  LinearRing2d createBoxArea(const double x_size, const double y_size);
+  LinearRing2d createBoxArea(const Point2d size);
   LinearRing2d createObjectArea(const DetectedObject & object);
   ObjectsWithFrontVehicle filterFrontVehicle(
     DetectedObjects::ConstSharedPtr objects, const LinearRing2d & front_area);
   pcl::PointXYZ getNearestNeighborPoint(
     const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud,
-    const LinearRing2d & front_area);
+    const Point2d & front_size);
   double estimateRelativeVelocity(const pcl::PointXYZ & point, const rclcpp::Time & header_time);
   double estimateAbsoluteVelocity(
     const double relative_velocity, Odometry::ConstSharedPtr odometry);
   bool isFrontVehicle(const DetectedObject & object, const LinearRing2d & front_area);
   bool isWithinVehicle(
-    const DetectedObject & object, pcl::PointXYZ & point, const LinearRing2d & front_areaconst);
+    const DetectedObject & object, const pcl::PointXYZ & point, const Point2d & front_size);
 };
 
 }  // namespace front_vehicle_velocity_estimator

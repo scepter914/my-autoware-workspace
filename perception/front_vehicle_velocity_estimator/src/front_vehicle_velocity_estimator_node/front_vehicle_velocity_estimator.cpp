@@ -30,12 +30,13 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   ObjectsWithFrontVehicle objects_with_front_vehicle{};
 
   // Filter front vehicle
-  LinearRing2d front_area = createBoxArea(100.0, 6.0);
+  const Point2d front_size{100.0, 3.0};
+  LinearRing2d front_area = createBoxArea(front_size);
   objects_with_front_vehicle = filterFrontVehicle(input.objects, front_area);
 
   // Get nearest neighbor pointcloud
   pcl::PointXYZ nearest_neighbor_point =
-    getNearestNeighborPoint(objects_with_front_vehicle.front_vehicle, input.pointcloud, front_area);
+    getNearestNeighborPoint(objects_with_front_vehicle.front_vehicle, input.pointcloud, front_size);
 
   // Set objects output
   output_.objects = *(objects_with_front_vehicle.objects_without_front_vehicle);
@@ -97,15 +98,15 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   return output_;
 }
 
-// Create front area
-LinearRing2d FrontVehicleVelocityEstimator::createBoxArea(const double x_size, const double y_size)
+// Create front area x = 0 ~ size.x, y = -size.y ~ size.y
+LinearRing2d FrontVehicleVelocityEstimator::createBoxArea(const Point2d size)
 {
   LinearRing2d box{};
-  box.push_back(Point2d{0.0, y_size / 2.0});
-  box.push_back(Point2d{x_size, y_size / 2.0});
-  box.push_back(Point2d{x_size, -y_size / 2.0});
-  box.push_back(Point2d{0.0, -y_size / 2.0});
-  box.push_back(Point2d{0.0, y_size / 2.0});
+  box.push_back(Point2d{0.0, size.y()});
+  box.push_back(Point2d{size.x(), size.y()});
+  box.push_back(Point2d{size.x(), -size.y()});
+  box.push_back(Point2d{0.0, -size.y()});
+  box.push_back(Point2d{0.0, size.y()});
   return box;
 }
 
@@ -164,25 +165,8 @@ FrontVehicleVelocityEstimator::filterFrontVehicle(
   return output;
 }
 
-bool FrontVehicleVelocityEstimator::isFrontVehicle(
-  const DetectedObject & object, const LinearRing2d & front_area)
-{
-  auto position = object.kinematics.pose_with_covariance.pose.position;
-  auto label = object.classification.at(0).label;
-  Point2d object_point{position.x, position.y};
-  if (
-    !(label == ObjectClassification::UNKNOWN) && !(label == ObjectClassification::PEDESTRIAN) &&
-    !(label == ObjectClassification::BICYCLE) && !(label == ObjectClassification::MOTORCYCLE) &&
-    boost::geometry::within(object_point, front_area)) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighborPoint(
-  const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud,
-  const LinearRing2d & front_area)
+  const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud, const Point2d & front_size)
 {
   pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_msg(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::fromROSMsg(*pointcloud, *pcl_msg);
@@ -192,11 +176,7 @@ pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighborPoint(
   bool is_initialized = false;
 
   for (const auto & point : *pcl_msg) {
-    LinearRing2d object_ring_2d = createObjectArea(object);
-    Point2d point_{point.x, point.y};
-    if (
-      boost::geometry::within(point_, object_ring_2d) &&
-      point.z > param_.threshold_pointcloud_z_low && point.z < param_.threshold_pointcloud_z_high) {
+    if (isWithinVehicle(object, point, front_size)) {
       if (!is_initialized) {
         nearest_neighbor_point = point;
       } else if (point.x < nearest_neighbor_point.x) {
@@ -204,13 +184,30 @@ pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighborPoint(
       }
     }
   }
-
   return nearest_neighbor_point;
 }
 
 bool FrontVehicleVelocityEstimator::isWithinVehicle(
-  const DetectedObject & object, pcl::PointXYZ & point, const LinearRing2d & front_areaconst)
+  const DetectedObject & object, const pcl::PointXYZ & point, const Point2d & front_size)
 {
+  LinearRing2d object_ring_2d = createObjectArea(object);
+  Point2d point_{point.x, point.y};
+  if (point.z < param_.threshold_pointcloud_z_low) {
+    return false;
+  } else if (point.z > param_.threshold_pointcloud_z_high) {
+    return false;
+  } else if (point.x < 0) {
+    return false;
+  } else if (point.x > front_size.x()) {
+    return false;
+  } else if (point.y < -front_size.y()) {
+    return false;
+  } else if (point.y > front_size.y()) {
+    return false;
+  } else if (!boost::geometry::within(point_, object_ring_2d)) {
+    return false;
+  }
+  return true;
 }
 
 double FrontVehicleVelocityEstimator::estimateRelativeVelocity(
@@ -229,6 +226,22 @@ double FrontVehicleVelocityEstimator::estimateAbsoluteVelocity(
 {
   const double velocity = relative_velocity + odometry->twist.twist.linear.x;
   return velocity;
+}
+
+bool FrontVehicleVelocityEstimator::isFrontVehicle(
+  const DetectedObject & object, const LinearRing2d & front_area)
+{
+  auto position = object.kinematics.pose_with_covariance.pose.position;
+  auto label = object.classification.at(0).label;
+  Point2d object_point{position.x, position.y};
+  if (
+    !(label == ObjectClassification::UNKNOWN) && !(label == ObjectClassification::PEDESTRIAN) &&
+    !(label == ObjectClassification::BICYCLE) && !(label == ObjectClassification::MOTORCYCLE) &&
+    boost::geometry::within(object_point, front_area)) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 }  // namespace front_vehicle_velocity_estimator
