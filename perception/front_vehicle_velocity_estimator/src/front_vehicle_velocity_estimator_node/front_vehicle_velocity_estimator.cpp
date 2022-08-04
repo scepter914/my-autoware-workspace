@@ -72,7 +72,7 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
   double velocity = std::accumulate(std::begin(velocity_queue_), std::end(velocity_queue_), 0.0) /
                     velocity_queue_.size();
   // RCLCPP_INFO(
-  //   rclcpp::get_logger("front_vehicle_velocity_estimator"), "x=%f, v=%f km/h, v_a=%fkm/h",
+  //   rclcpp::get_logger("front_vehicle_velocity_estimator"), "x=%f, v=%f km/h, v_a=%f km/h",
   //   objects_with_front_vehicle.front_vehicle.kinematics.pose_with_covariance.pose.position.x,
   //   now_absolute_velocity * 3.6, velocity * 3.6);
 

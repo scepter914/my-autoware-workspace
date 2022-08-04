@@ -69,7 +69,7 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
   core_param_.threshold_relative_velocity =
     declare_parameter<double>("core_params.threshold_relative_velocity", 10.0);
   core_param_.threshold_absolute_velocity =
-    declare_parameter<double>("core_params.threshold_absolute_velocity", 17.0);
+    declare_parameter<double>("core_params.threshold_absolute_velocity", 20.0);
 
   // Core
   front_vehicle_velocity_estimator_ = std::make_unique<FrontVehicleVelocityEstimator>(get_logger());
