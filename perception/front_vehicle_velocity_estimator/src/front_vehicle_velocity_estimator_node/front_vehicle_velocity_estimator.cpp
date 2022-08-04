@@ -35,7 +35,7 @@ FrontVehicleVelocityEstimator::Output FrontVehicleVelocityEstimator::update(
 
   // Get nearest neighbor pointcloud
   pcl::PointXYZ nearest_neighbor_point =
-    getNearestNeighborPoint(objects_with_front_vehicle.front_vehicle, input.pointcloud);
+    getNearestNeighborPoint(objects_with_front_vehicle.front_vehicle, input.pointcloud, front_area);
 
   // Set objects output
   output_.objects = *(objects_with_front_vehicle.objects_without_front_vehicle);
@@ -181,7 +181,8 @@ bool FrontVehicleVelocityEstimator::isFrontVehicle(
 }
 
 pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighborPoint(
-  const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud)
+  const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud,
+  const LinearRing2d & front_area)
 {
   pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_msg(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::fromROSMsg(*pointcloud, *pcl_msg);
@@ -205,6 +206,11 @@ pcl::PointXYZ FrontVehicleVelocityEstimator::getNearestNeighborPoint(
   }
 
   return nearest_neighbor_point;
+}
+
+bool FrontVehicleVelocityEstimator::isWithinVehicle(
+  const DetectedObject & object, pcl::PointXYZ & point, const LinearRing2d & front_areaconst)
+{
 }
 
 double FrontVehicleVelocityEstimator::estimateRelativeVelocity(

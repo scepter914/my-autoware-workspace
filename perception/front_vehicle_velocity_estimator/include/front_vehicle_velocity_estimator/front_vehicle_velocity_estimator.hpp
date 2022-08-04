@@ -93,11 +93,14 @@ private:
   ObjectsWithFrontVehicle filterFrontVehicle(
     DetectedObjects::ConstSharedPtr objects, const LinearRing2d & front_area);
   pcl::PointXYZ getNearestNeighborPoint(
-    const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud);
+    const DetectedObject & object, PointCloud2::ConstSharedPtr pointcloud,
+    const LinearRing2d & front_area);
   double estimateRelativeVelocity(const pcl::PointXYZ & point, const rclcpp::Time & header_time);
   double estimateAbsoluteVelocity(
     const double relative_velocity, Odometry::ConstSharedPtr odometry);
   bool isFrontVehicle(const DetectedObject & object, const LinearRing2d & front_area);
+  bool isWithinVehicle(
+    const DetectedObject & object, pcl::PointXYZ & point, const LinearRing2d & front_areaconst);
 };
 
 }  // namespace front_vehicle_velocity_estimator
