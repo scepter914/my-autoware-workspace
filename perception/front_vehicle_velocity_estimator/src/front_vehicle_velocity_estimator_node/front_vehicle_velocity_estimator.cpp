@@ -132,13 +132,12 @@ LinearRing2d FrontVehicleVelocityEstimator::createObjectArea(const DetectedObjec
 }
 
 // Filter for a front vehicle.
-// Objects except the front vehicle are pushed to output objects
 FrontVehicleVelocityEstimator::ObjectsWithFrontVehicle
 FrontVehicleVelocityEstimator::filterFrontVehicle(
   DetectedObjects::ConstSharedPtr objects, const LinearRing2d & front_area)
 {
   // Initialize output
-  FrontVehicleVelocityEstimator::ObjectsWithFrontVehicle output{};
+  ObjectsWithFrontVehicle output{};
   output.is_front_vehicle = false;
 
   DetectedObjects output_objects_{};
@@ -223,7 +222,6 @@ double FrontVehicleVelocityEstimator::estimateAbsoluteVelocity(
   const double relative_velocity, Odometry::ConstSharedPtr odometry)
 {
   const double velocity = relative_velocity + odometry->twist.twist.linear.x;
-
   return velocity;
 }
 
