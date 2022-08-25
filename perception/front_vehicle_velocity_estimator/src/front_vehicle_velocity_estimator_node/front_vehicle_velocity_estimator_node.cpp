@@ -76,15 +76,35 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
   front_vehicle_velocity_estimator_->setParam(core_param_);
 
   // Subscriber
-  sub_pointcloud_ = create_subscription<PointCloud2>(
-    "~/input/pointcloud", rclcpp::SensorDataQoS(),
-    std::bind(&FrontVehicleVelocityEstimatorNode::onPointcloud, this, std::placeholders::_1));
-  sub_objects_ = create_subscription<DetectedObjects>(
-    "~/input/objects", rclcpp::QoS{1},
-    std::bind(&FrontVehicleVelocityEstimatorNode::onObjects, this, std::placeholders::_1));
-  sub_odometry_ = create_subscription<Odometry>(
-    "~/input/odometry", rclcpp::QoS{1},
-    std::bind(&FrontVehicleVelocityEstimatorNode::onOdometry, this, std::placeholders::_1));
+  sub_pointcloud_.subscribe(
+    this, "~/input/pointcloud", rclcpp::SensorDataQoS().get_rmw_qos_profile());
+  sub_objects_.subscribe(this, "~/input/objects", rclcpp::QoS{1}.get_rmw_qos_profile());
+  sub_odometry_.subscribe(this, "~/input/odometry", rclcpp::QoS{1}.get_rmw_qos_profile());
+  // sub_pointcloud_ = std::make_shared<message_filters::Subscriber<PointCloud2>>(
+  //   this, "~/input/pointcloud", rclcpp::SensorDataQoS().get_rmw_qos_profile());
+  // sub_objects_ = std::make_shared<message_filters::Subscriber<DetectedObjects>>(
+  //   this, "~/input/objects", rclcpp::QoS{1}.get_rmw_qos_profile());
+  // sub_odometry_ = std::make_shared<message_filters::Subscriber<Odometry>>(
+  //   this, "~/input/odometry", rclcpp::QoS{1}.get_rmw_qos_profile());
+
+  using std::placeholders::_1;
+  using std::placeholders::_2;
+  using std::placeholders::_3;
+  sync_ptr_ = std::make_shared<Sync>(SyncPolicy(20), sub_pointcloud_, sub_objects_, sub_odometry_);
+  // sync_ptr_ =
+  //   std::make_shared<Sync>(SyncPolicy(10), *sub_pointcloud_, *sub_objects_, *sub_odometry_);
+  sync_ptr_->registerCallback(
+    std::bind(&FrontVehicleVelocityEstimatorNode::onData, this, _1, _2, _3));
+
+  //  sub_pointcloud_ = create_subscription<PointCloud2>(
+  //    "~/input/pointcloud", rclcpp::SensorDataQoS(),
+  //    std::bind(&FrontVehicleVelocityEstimatorNode::onPointcloud, this, std::placeholders::_1));
+  //  sub_objects_ = create_subscription<DetectedObjects>(
+  //    "~/input/objects", rclcpp::QoS{1},
+  //    std::bind(&FrontVehicleVelocityEstimatorNode::onObjects, this, std::placeholders::_1));
+  //  sub_odometry_ = create_subscription<Odometry>(
+  //    "~/input/odometry", rclcpp::QoS{1},
+  //    std::bind(&FrontVehicleVelocityEstimatorNode::onOdometry, this, std::placeholders::_1));
 
   // Publisher
   pub_objects_ = create_publisher<DetectedObjects>("~/output/objects", 1);
@@ -98,20 +118,29 @@ FrontVehicleVelocityEstimatorNode::FrontVehicleVelocityEstimatorNode(
     std::bind(&FrontVehicleVelocityEstimatorNode::onTimer, this));
 }
 
-void FrontVehicleVelocityEstimatorNode::onPointcloud(const PointCloud2::ConstSharedPtr msg)
+void FrontVehicleVelocityEstimatorNode::onData(
+  const PointCloud2::ConstSharedPtr pointcloud_msg,
+  const DetectedObjects::ConstSharedPtr object_msg, const Odometry::ConstSharedPtr odometry_msg)
 {
-  pointcloud_data_ = msg;
+  pointcloud_data_ = pointcloud_msg;
+  objects_data_ = object_msg;
+  odometry_data_ = odometry_msg;
 }
 
-void FrontVehicleVelocityEstimatorNode::onObjects(const DetectedObjects::ConstSharedPtr msg)
-{
-  objects_data_ = msg;
-}
-
-void FrontVehicleVelocityEstimatorNode::onOdometry(const Odometry::ConstSharedPtr msg)
-{
-  odometry_data_ = msg;
-}
+// void FrontVehicleVelocityEstimatorNode::onPointcloud(const PointCloud2::ConstSharedPtr msg)
+// {
+//   pointcloud_data_ = msg;
+// }
+//
+// void FrontVehicleVelocityEstimatorNode::onObjects(const DetectedObjects::ConstSharedPtr msg)
+// {
+//   objects_data_ = msg;
+// }
+//
+// void FrontVehicleVelocityEstimatorNode::onOdometry(const Odometry::ConstSharedPtr msg)
+// {
+//   odometry_data_ = msg;
+// }
 
 rcl_interfaces::msg::SetParametersResult FrontVehicleVelocityEstimatorNode::onSetParam(
   const std::vector<rclcpp::Parameter> & params)
