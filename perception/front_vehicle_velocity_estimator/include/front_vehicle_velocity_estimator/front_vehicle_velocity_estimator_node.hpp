@@ -52,15 +52,9 @@ public:
 
 private:
   // Subscriber
-  // rclcpp::Subscription<PointCloud2>::SharedPtr sub_pointcloud_{};
-  // rclcpp::Subscription<DetectedObjects>::SharedPtr sub_objects_{};
-  // rclcpp::Subscription<Odometry>::SharedPtr sub_odometry_{};
   message_filters::Subscriber<PointCloud2> sub_pointcloud_{};
   message_filters::Subscriber<DetectedObjects> sub_objects_{};
   message_filters::Subscriber<Odometry> sub_odometry_{};
-  // std::shared_ptr<message_filters::Subscriber<PointCloud2>> sub_pointcloud_{};
-  // std::shared_ptr<message_filters::Subscriber<DetectedObjects>> sub_objects_{};
-  // std::shared_ptr<message_filters::Subscriber<Odometry>> sub_odometry_{};
 
   using SyncPolicy =
     message_filters::sync_policies::ApproximateTime<PointCloud2, DetectedObjects, Odometry>;
@@ -71,9 +65,6 @@ private:
   void onData(
     const PointCloud2::ConstSharedPtr pointcloud_msg,
     const DetectedObjects::ConstSharedPtr object_msg, const Odometry::ConstSharedPtr odometry_msg);
-  // void onPointcloud(const PointCloud2::ConstSharedPtr msg);
-  // void onObjects(const DetectedObjects::ConstSharedPtr msg);
-  // void onOdometry(const Odometry::ConstSharedPtr msg);
 
   // Data Buffer
   PointCloud2::ConstSharedPtr pointcloud_data_{};
