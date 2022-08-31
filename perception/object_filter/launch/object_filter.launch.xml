@@ -1,24 +1,24 @@
 <launch>
   <!-- Input -->
-  <arg name="input/data" default="~/input/data" />
+  <arg name="input/objects" default="~/input/objects" />
 
   <!-- Output -->
-  <arg name="output/data" default="~/output/data" />
+  <arg name="output/objects" default="~/output/objects" />
 
   <!-- Parameter -->
-  <arg name="config_file" default="$(find-pkg-share object_filter)/config/object_filter.param.yaml" />
   <arg name="update_rate_hz" default="10.0" />
+  <arg name="probability_threshold" default="0.40" />
 
   <!-- Node -->
   <node pkg="object_filter" exec="object_filter_node" name="object_filter" output="screen">
     <!-- Input -->
-    <remap from="~/input/data" to="$(var input/data)"/>
+    <remap from="~/input/objects" to="$(var input/objects)"/>
 
     <!-- Output -->
-    <remap from="~/output/data" to="$(var output/data)"/>
+    <remap from="~/output/objects" to="$(var output/objects)"/>
 
     <!-- Parameter -->
-    <param from="$(var config_file)" />
     <param name="update_rate_hz" value="$(var update_rate_hz)"/>
+    <param name="probability_threshold" value="$(var probability_threshold" />
   </node>
 </launch>
