@@ -37,7 +37,8 @@ public:
   struct NodeParam
   {
     double update_rate_hz{};
-    double probability_threshold{};
+    double probability_threshold_upper{};
+    double probability_threshold_lower{};
   };
 
 private:

@@ -58,8 +58,10 @@ ObjectFilterNode::ObjectFilterNode(const rclcpp::NodeOptions & node_options)
 
   // Node Parameter
   node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
-  node_param_.probability_threshold =
-    declare_parameter<double>("node_params.probability_threshold", 0.40);
+  node_param_.probability_threshold_upper =
+    declare_parameter<double>("node_params.probability_threshold_upper", 1.0);
+  node_param_.probability_threshold_lower =
+    declare_parameter<double>("node_params.probability_threshold_lower", 0.40);
 
   // Subscriber
   sub_objects_ = create_subscription<DetectedObjects>(
@@ -88,6 +90,10 @@ rcl_interfaces::msg::SetParametersResult ObjectFilterNode::onSetParam(
 
       // Update params
       update_param(params, "node_params.update_rate_hz", p.update_rate_hz);
+      update_param(
+        params, "node_params.probability_threshold_upper", p.probability_threshold_upper);
+      update_param(
+        params, "node_params.probability_threshold_lower", p.probability_threshold_lower);
     }
 
   } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
@@ -127,7 +133,9 @@ DetectedObjects ObjectFilterNode::update(DetectedObjects::ConstSharedPtr objects
   DetectedObjects output_objects;
   output_objects.header = objects->header;
   for (const auto & object : objects->objects) {
-    if (object.classification.at(0).probability > node_param_.probability_threshold) {
+    if (
+      object.classification.at(0).probability < node_param_.probability_threshold_upper &&
+      object.classification.at(0).probability > node_param_.probability_threshold_lower) {
       output_objects.objects.emplace_back(object);
     }
   }
