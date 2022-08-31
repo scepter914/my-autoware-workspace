@@ -1,0 +1,24 @@
+<launch>
+  <!-- Input -->
+  <arg name="input/data" default="~/input/data" />
+
+  <!-- Output -->
+  <arg name="output/data" default="~/output/data" />
+
+  <!-- Parameter -->
+  <arg name="config_file" default="$(find-pkg-share object_filter)/config/object_filter.param.yaml" />
+  <arg name="update_rate_hz" default="10.0" />
+
+  <!-- Node -->
+  <node pkg="object_filter" exec="object_filter_node" name="object_filter" output="screen">
+    <!-- Input -->
+    <remap from="~/input/data" to="$(var input/data)"/>
+
+    <!-- Output -->
+    <remap from="~/output/data" to="$(var output/data)"/>
+
+    <!-- Parameter -->
+    <param from="$(var config_file)" />
+    <param name="update_rate_hz" value="$(var update_rate_hz)"/>
+  </node>
+</launch>
