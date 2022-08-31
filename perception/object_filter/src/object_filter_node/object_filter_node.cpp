@@ -66,7 +66,7 @@ ObjectFilterNode::ObjectFilterNode(const rclcpp::NodeOptions & node_options)
     "~/input/objects", rclcpp::QoS{1}, std::bind(&ObjectFilterNode::onObjects, this, _1));
 
   // Publisher
-  pub_objects_ = create_publisher<DetectedObjects>("~/output/data", 1);
+  pub_objects_ = create_publisher<DetectedObjects>("~/output/objects", 1);
 
   // Timer
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
