@@ -29,6 +29,47 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #endif
 
+namespace perception_utils
+{
+using tier4_autoware_utils::LinearRing2d;
+using tier4_autoware_utils::Point2d;
+
+/*
+LinearRing2d getLinearRing2d(DetectedObject object)
+{
+  return tier4_autoware_utils::transformVector(
+    createObject2d(object.shape.dimensions.x, object.shape.dimensions.y),
+    tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
+}
+
+LinearRing2d getLinearRing2dWithMargin(DetectedObject object, float margin_x, float margin_y)
+{
+  auto size_x = object.shape.dimensions.x + margin_x;
+  auto size_y = object.shape.dimensions.y + margin_y;
+  linear_ring = tier4_autoware_utils::transformVector(
+    createObject2d(size_x, size_y),
+    tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
+  return linear_ring;
+*/
+
+LinearRing2d createObject2d(const float x, const float y)
+{
+  const double x_front = x / 2.0;
+  const double x_rear = x / 2.0;
+  const double y_left = y / 2.0;
+  const double y_right = y / 2.0;
+
+  LinearRing2d box{};
+  box.push_back(Point2d{x_front, y_left});
+  box.push_back(Point2d{x_front, y_right});
+  box.push_back(Point2d{x_rear, y_right});
+  box.push_back(Point2d{x_rear, y_left});
+  box.push_back(Point2d{x_front, y_left});
+
+  return box;
+}
+}  // namespace perception_utils
+
 namespace tier4_autoware_utils
 {
 
@@ -37,9 +78,20 @@ using geometry_msgs::msg::TwistWithCovariance;
 
 inline double getTwistNorm(const Twist & twist)
 {
-  return std::sqrt(
-    twist.linear.x * twist.linear.x + twist.linear.y * twist.linear.y +
-    twist.linear.z * twist.linear.z);
+  auto v = twist.linear;
+  return std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
+/// Judge whether twist covariance is available.
+inline bool isTwistCovarianceAvailable(const TwistWithCovariance & twist_with_covariance)
+{
+  using IDX = tier4_autoware_utils::xyzrpy_covariance_index::XYZRPY_COV_IDX;
+  auto covariance = twist_with_covariance.covariance;
+  if (covariance[IDX::X_X] == 0.0 && covariance[IDX::Y_Y] == 0.0 && covariance[IDX::Z_Z] == 0.0) {
+    return false;
+  } else {
+    return true;
+  }
 }
 
 inline TwistWithCovariance getTwistWithCovariance(const Twist & twist)
