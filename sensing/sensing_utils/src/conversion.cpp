@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SENSING_UTILS__SENSING_UTILS_HPP__
-#define SENSING_UTILS__SENSING_UTILS_HPP__
+#include "sensing_utils/sensing_utils.hpp"
 
-#include "sensing_utils/conversion.hpp"
+namespace sensing_utils
+{
 
-#endif  // SENSING_UTILS__SENSING_UTILS_HPP__
+}  // namespace sensing_utils

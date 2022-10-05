@@ -12,18 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "sensing_utils/sensing_utils.hpp"
-
 namespace sensing_utils
 {
-SensingUtils::Output SensingUtils::update(const SensingUtils::Input & input)
-{
-  SensingUtils::Output output;
-
-  // Sample
-  output.data = input.data + param_.data;
-  RCLCPP_INFO(rclcpp::get_logger("sensing_utils"), "Debug: %d", 0);
-  return output;
-}
-
 }  // namespace sensing_utils
