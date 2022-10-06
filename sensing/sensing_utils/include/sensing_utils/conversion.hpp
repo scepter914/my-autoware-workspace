@@ -36,31 +36,23 @@ using tier4_autoware_utils::LinearRing2d;
 using tier4_autoware_utils::Point2d;
 
 /*
-LinearRing2d getLinearRing2d(DetectedObject object)
+LinearRing2d toLinearRing2d(DetectedObject object)
 {
-  return tier4_autoware_utils::transformVector(
-    createObject2d(object.shape.dimensions.x, object.shape.dimensions.y),
+  return transformVector(
+    createRectangle(object.shape.dimensions.x, object.shape.dimensions.y),
     tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
 }
 
 LinearRing2d getLinearRing2dWithMargin(DetectedObject object, float margin_x, float margin_y)
 {
-  auto size_x = object.shape.dimensions.x + margin_x;
-  auto size_y = object.shape.dimensions.y + margin_y;
-  linear_ring = tier4_autoware_utils::transformVector(
-    createObject2d(size_x, size_y),
+  auto p = object.shape.dimensions;
+  linear_ring = transformVector(
+    createRectangle(p.x + margin_x, p.y + margin_y),
     tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
   return linear_ring;
-
-tier4_autoware_utils::Polygon2d toPolygon2d(
-  const autoware_auto_perception_msgs::msg::DetectedObject & object)
-{
-  return tier4_autoware_utils::toPolygon2d(
-    object.kinematics.initial_pose_with_covariance.pose, object.shape);
-}
 */
 
-LinearRing2d createObject2d(const float x, const float y)
+LinearRing2d createRectangle(const float x, const float y)
 {
   const double x_front = x / 2.0;
   const double x_rear = x / 2.0;
