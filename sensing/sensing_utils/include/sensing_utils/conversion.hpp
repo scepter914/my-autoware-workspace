@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cmath>
+#include <pcl/pcl_base.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
 
-#include "geometry_msgs/msg/twist_with_covariance.hpp"
-#include "pcl/pcl_base.h"
-#include "pcl/point_cloud.h"
-#include "pcl/point_types.h"
-#include "pcl_conversions/pcl_conversions.h"
-#include "radar_msgs/msg/radar_scan.hpp"
-#include "sensor_msgs/msg/point_cloud2.hpp"
+#include <cmath>
+#include <geometry_msgs/msg/twist_with_covariance.hpp>
+#include <radar_msgs/msg/radar_scan.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+
 #include "tier4_autoware_utils/tier4_autoware_utils.hpp"
 
 #ifdef ROS_DISTRO_GALACTIC
@@ -50,6 +51,13 @@ LinearRing2d getLinearRing2dWithMargin(DetectedObject object, float margin_x, fl
     createObject2d(size_x, size_y),
     tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
   return linear_ring;
+
+tier4_autoware_utils::Polygon2d toPolygon2d(
+  const autoware_auto_perception_msgs::msg::DetectedObject & object)
+{
+  return tier4_autoware_utils::toPolygon2d(
+    object.kinematics.initial_pose_with_covariance.pose, object.shape);
+}
 */
 
 LinearRing2d createObject2d(const float x, const float y)
@@ -68,6 +76,7 @@ LinearRing2d createObject2d(const float x, const float y)
 
   return box;
 }
+
 }  // namespace perception_utils
 
 namespace tier4_autoware_utils
