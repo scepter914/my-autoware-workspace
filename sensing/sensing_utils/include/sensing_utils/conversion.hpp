@@ -32,6 +32,11 @@
 
 namespace perception_utils
 {
+
+}  // namespace perception_utils
+
+namespace tier4_autoware_utils
+{
 using tier4_autoware_utils::LinearRing2d;
 using tier4_autoware_utils::Point2d;
 
@@ -42,15 +47,6 @@ LinearRing2d toLinearRing2d(DetectedObject object)
     createRectangle(object.shape.dimensions.x, object.shape.dimensions.y),
     tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
 }
-
-LinearRing2d getLinearRing2dWithMargin(DetectedObject object, float margin_x, float margin_y)
-{
-  auto p = object.shape.dimensions;
-  linear_ring = transformVector(
-    createRectangle(p.x + margin_x, p.y + margin_y),
-    tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
-  return linear_ring;
-*/
 
 LinearRing2d createRectangle(const float x, const float y)
 {
@@ -68,11 +64,18 @@ LinearRing2d createRectangle(const float x, const float y)
 
   return box;
 }
+*/
 
-}  // namespace perception_utils
-
-namespace tier4_autoware_utils
+// to radar fusion
+/*
+LinearRing2d getLinearRing2dWithMargin(DetectedObject object, float margin_x, float margin_y)
 {
+  auto p = object.shape.dimensions;
+  linear_ring = transformVector(
+    createRectangle(p.x + margin_x, p.y + margin_y),
+    tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
+  return linear_ring;
+*/
 
 using geometry_msgs::msg::Twist;
 using geometry_msgs::msg::TwistWithCovariance;
