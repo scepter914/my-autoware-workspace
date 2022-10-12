@@ -37,6 +37,9 @@ namespace perception_utils
 
 namespace tier4_autoware_utils
 {
+using tier4_autoware_utils::LinearRing2d;
+using tier4_autoware_utils::Point2d;
+
 /*
 LinearRing2d toLinearRing2d(DetectedObject object)
 {
@@ -74,6 +77,47 @@ LinearRing2d getLinearRing2dWithMargin(DetectedObject object, float margin_x, fl
   return linear_ring;
 */
 
+using geometry_msgs::msg::Twist;
+using geometry_msgs::msg::TwistWithCovariance;
+
+inline double getTwistNorm(const Twist & twist)
+{
+  auto v = twist.linear;
+  return std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
+/// Judge whether twist covariance is available.
+inline bool isTwistCovarianceAvailable(const TwistWithCovariance & twist_with_covariance)
+{
+  using IDX = tier4_autoware_utils::xyzrpy_covariance_index::XYZRPY_COV_IDX;
+  auto covariance = twist_with_covariance.covariance;
+  if (covariance[IDX::X_X] == 0.0 && covariance[IDX::Y_Y] == 0.0 && covariance[IDX::Z_Z] == 0.0) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+inline TwistWithCovariance getTwistWithCovariance(const Twist & twist)
+{
+  TwistWithCovariance twist_with_covariance;
+  twist_with_covariance.twist = twist;
+  return twist_with_covariance;
+}
+
+inline TwistWithCovariance getTwistWithCovariance(const geometry_msgs::msg::Vector3 & velocity)
+{
+  TwistWithCovariance twist_with_covariance;
+  twist_with_covariance.twist.linear = velocity;
+  return twist_with_covariance;
+}
+
+inline Twist getTwist(const geometry_msgs::msg::Vector3 & velocity)
+{
+  Twist twist;
+  twist.linear = velocity;
+  return twist;
+}
 }  // namespace tier4_autoware_utils
 
 namespace sensing_utils
