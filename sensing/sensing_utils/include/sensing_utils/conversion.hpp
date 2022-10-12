@@ -32,7 +32,6 @@
 
 namespace tier4_autoware_utils
 {
-
 LinearRing2d createRectangle(const float x, const float y)
 {
   const double x_front = x / 2.0;
@@ -109,12 +108,14 @@ inline Vector3 getVelocity(const RadarReturn & radar)
 
 inline Twist getTwist(const RadarReturn & radar)
 {
-  return tier4_autoware_utils::getTwist(getVelocity(radar));
+  auto angular = tier4_autoware_utils::createVector3(0.0, 0.0, 0.0);
+  return tier4_autoware_utils::getTwist(getVelocity(radar), angular);
 }
 
 inline TwistWithCovariance getTwistWithCovariance(const RadarReturn & radar)
 {
-  return tier4_autoware_utils::getTwistWithCovariance(getVelocity(radar));
+  auto angular = tier4_autoware_utils::createVector3(0.0, 0.0, 0.0);
+  return tier4_autoware_utils::getTwistWithCovariance(getVelocity(radar), angular);
 }
 
 inline PointCloud2 toAmplitudePointcloud2(const RadarScan & radar_scan)
