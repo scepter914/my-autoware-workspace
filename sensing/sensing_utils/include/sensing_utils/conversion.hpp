@@ -30,23 +30,8 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #endif
 
-namespace perception_utils
-{
-
-}  // namespace perception_utils
-
 namespace tier4_autoware_utils
 {
-using tier4_autoware_utils::LinearRing2d;
-using tier4_autoware_utils::Point2d;
-
-/*
-LinearRing2d toLinearRing2d(DetectedObject object)
-{
-  return transformVector(
-    createRectangle(object.shape.dimensions.x, object.shape.dimensions.y),
-    tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
-}
 
 LinearRing2d createRectangle(const float x, const float y)
 {
@@ -64,7 +49,26 @@ LinearRing2d createRectangle(const float x, const float y)
 
   return box;
 }
-*/
+
+LinearRing2d toLinearRing2d(
+  const geometry_msgs::msg::Pose & pose, const autoware_auto_perception_msgs::msg::Shape & shape)
+{
+  if (shape.type == autoware_auto_perception_msgs::msg::Shape::BOUNDING_BOX) {
+    return transformVector(
+      createRectangle(shape.dimensions.x, shape.dimensions.y),
+      tier4_autoware_utils::pose2transform(pose));
+  } else if (shape.type == autoware_auto_perception_msgs::msg::Shape::CYLINDER) {
+    // 実装する
+  } else if (shape.type == autoware_auto_perception_msgs::msg::Shape::POLYGON) {
+    // 実装する
+  }
+}
+
+LinearRing2d toLinearRing2d(const autoware_auto_perception_msgs::msg::DetectedObject & object)
+{
+  return tier4_autoware_utils::toLinearRing2d(
+    object.kinematics.pose_with_covariance.pose, object.shape);
+}
 
 // to radar fusion
 /*
@@ -76,7 +80,6 @@ LinearRing2d getLinearRing2dWithMargin(DetectedObject object, float margin_x, fl
     tier4_autoware_utils::pose2transform(object.kinematics.pose_with_covariance.pose));
   return linear_ring;
 */
-
 }  // namespace tier4_autoware_utils
 
 namespace sensing_utils
