@@ -126,23 +126,25 @@ inline TwistWithCovariance getTwistWithCovariance(const RadarReturn & radar)
   return tier4_autoware_utils::getTwistWithCovariance(getVelocity(radar), angular);
 }
 
-/// @brief Compensate ego vehicle twist
+/// @brief Compensate ego vehicle twist. Doppler velocity compensated by ego vehicle in sensor coordinate.
 /// @param radar: Radar return
 /// @param ego_vehicle_twist_with_covariance: The twist of ego vehicle
-/// @param transform: tf
+/// @param transform: transform
 /// @return
 inline Vector3 compensateEgoVehicleTwist(
   const RadarReturn & radar, const TwistWithCovariance & ego_vehicle_twist_with_covariance,
   const geometry_msgs::msg::TransformStamped & transform)
 {
-  geometry_msgs::msg::Vector3Stamped radar_velocity_stamped{};
-  radar_velocity_stamped.vector = getVelocity(radar);
+  // transform to sensor coordinate
+  geometry_msgs::msg::Vector3Stamped velocity_stamped{};
+  velocity_stamped.vector = ego_vehicle_twist_with_covariance.twist.linear;
   geometry_msgs::msg::Vector3Stamped transformed_velocity_stamped{};
-  tf2::doTransform(radar_velocity_stamped, transformed_velocity_stamped, transform_);
+  tf2::doTransform(velocity_stamped, transformed_velocity_stamped, transform_);
 
-  const auto v_r = transformed_velocity_stamped.twist.linear;
-  const auto v_t = ego_vehicle_twist_with_covariance.twist.linear;
-  return tf2::Vector3(v_r.x - v_t.x, v_r.y - v_t.y, v_r.z - v_t.z);
+  // Compensate doppler velocity with ego vehicle twist
+  const auto v_e = ego_vehicle_twist_with_covariance.twist.linear;
+  const auto v_r = getVelocity(radar);
+  return tf2::Vector3(v_r.x - v_e.x, v_r.y - v_e.y, v_r.z - v_e.z);
 }
 
 inline PointCloud2 toAmplitudePointcloud2(const RadarScan & radar_scan)
