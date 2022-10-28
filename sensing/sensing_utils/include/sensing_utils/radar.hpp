@@ -18,6 +18,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 
 #include <cmath>
+#include <geometry_msgs/msg/pose_with_covariance.hpp>
 #include <geometry_msgs/msg/twist_with_covariance.hpp>
 #include <radar_msgs/msg/radar_scan.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -112,10 +113,36 @@ inline Twist getTwist(const RadarReturn & radar)
   return tier4_autoware_utils::getTwist(getVelocity(radar), angular);
 }
 
+inline Vector3 getVelocity(const RadarReturn & radar)
+{
+  const auto vx = radar.doppler_velocity * std::sin(radar.azimuth) * std::cos(radar.elevation);
+  const auto vz = radar.doppler_velocity * std::sin(radar.elevation);
+  return geometry_msgs::build<Vector3>().x(vx).y(0.0).z(vz);
+}
+
 inline TwistWithCovariance getTwistWithCovariance(const RadarReturn & radar)
 {
   auto angular = tier4_autoware_utils::createVector3(0.0, 0.0, 0.0);
   return tier4_autoware_utils::getTwistWithCovariance(getVelocity(radar), angular);
+}
+
+/// @brief Compensate ego vehicle twist
+/// @param radar: Radar return
+/// @param ego_vehicle_twist_with_covariance: The twist of ego vehicle
+/// @param transform: tf
+/// @return
+inline Vector3 compensateEgoVehicleTwist(
+  const RadarReturn & radar, const TwistWithCovariance & ego_vehicle_twist_with_covariance,
+  const geometry_msgs::msg::TransformStamped & transform)
+{
+  geometry_msgs::msg::Vector3Stamped radar_velocity_stamped{};
+  radar_velocity_stamped.vector = getVelocity(radar);
+  geometry_msgs::msg::Vector3Stamped transformed_velocity_stamped{};
+  tf2::doTransform(radar_velocity_stamped, transformed_velocity_stamped, transform_);
+
+  const auto v_r = transformed_velocity_stamped.twist.linear;
+  const auto v_t = ego_vehicle_twist_with_covariance.twist.linear;
+  return tf2::Vector3(v_r.x - v_t.x, v_r.y - v_t.y, v_r.z - v_t.z);
 }
 
 inline PointCloud2 toAmplitudePointcloud2(const RadarScan & radar_scan)
