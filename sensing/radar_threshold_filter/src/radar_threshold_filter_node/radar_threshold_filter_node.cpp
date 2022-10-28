@@ -14,6 +14,8 @@
 
 #include "radar_threshold_filter/radar_threshold_filter_node.hpp"
 
+#include <radar_msgs/msg/radar_scan.hpp>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -46,6 +48,9 @@ bool update_param(
 
 namespace radar_threshold_filter
 {
+using radar_msgs::msg::RadarReturn;
+using radar_msgs::msg::RadarScan;
+
 RadarThresholdFilterNode::RadarThresholdFilterNode(const rclcpp::NodeOptions & node_options)
 : Node("radar_threshold_filter", node_options)
 {
@@ -64,11 +69,11 @@ RadarThresholdFilterNode::RadarThresholdFilterNode(const rclcpp::NodeOptions & n
   radar_threshold_filter_->setParam(core_param_);
 
   // Subscriber
-  sub_data_ = create_subscription<Int32>(
-    "~/input/data", rclcpp::QoS{1}, std::bind(&RadarThresholdFilterNode::onData, this, _1));
+  sub_data_ = create_subscription<RadarScan>(
+    "~/input/radar", rclcpp::QoS{1}, std::bind(&RadarThresholdFilterNode::onData, this, _1));
 
   // Publisher
-  pub_data_ = create_publisher<Int32>("~/output/data", 1);
+  pub_data_ = create_publisher<RadarScan>("~/output/radar", 1);
 
   // Timer
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();

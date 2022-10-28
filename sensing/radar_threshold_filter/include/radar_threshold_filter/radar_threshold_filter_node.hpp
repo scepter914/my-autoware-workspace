@@ -26,7 +26,8 @@
 
 namespace radar_threshold_filter
 {
-using example_interfaces::msg::Int32;
+using radar_msgs::msg::RadarReturn;
+using radar_msgs::msg::RadarScan;
 
 class RadarThresholdFilterNode : public rclcpp::Node
 {
@@ -40,16 +41,16 @@ public:
 
 private:
   // Subscriber
-  rclcpp::Subscription<Int32>::SharedPtr sub_data_{};
+  rclcpp::Subscription<RadarScan>::SharedPtr sub_data_{};
 
   // Callback
-  void onData(const Int32::ConstSharedPtr msg);
+  void onData(const RadarScan::ConstSharedPtr msg);
 
   // Data Buffer
-  Int32::ConstSharedPtr data_{};
+  RadarScan::ConstSharedPtr radar_data_{};
 
   // Publisher
-  rclcpp::Publisher<Int32>::SharedPtr pub_data_{};
+  rclcpp::Publisher<RadarScan>::SharedPtr pub_data_{};
 
   // Timer
   rclcpp::TimerBase::SharedPtr timer_{};
@@ -64,12 +65,6 @@ private:
 
   // Parameter
   NodeParam node_param_{};
-
-  // Core
-  RadarThresholdFilter::Input input_{};
-  RadarThresholdFilter::Output output_{};
-  RadarThresholdFilter::Param core_param_{};
-  std::unique_ptr<RadarThresholdFilter> radar_threshold_filter_{};
 };
 
 }  // namespace radar_threshold_filter
