@@ -18,7 +18,6 @@ ament_auto_find_build_dependencies()
 
 ## Targets
 ament_auto_add_library(radar_threshold_filter_node_component SHARED
-  src/radar_threshold_filter_node/radar_threshold_filter.cpp
   src/radar_threshold_filter_node/radar_threshold_filter_node.cpp
 )
 
