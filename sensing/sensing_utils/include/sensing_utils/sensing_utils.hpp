@@ -15,6 +15,6 @@
 #ifndef SENSING_UTILS__SENSING_UTILS_HPP__
 #define SENSING_UTILS__SENSING_UTILS_HPP__
 
-#include "sensing_utils/radar.hpp"
+#include "sensing_utils/radar_utils.hpp"
 
 #endif  // SENSING_UTILS__SENSING_UTILS_HPP__

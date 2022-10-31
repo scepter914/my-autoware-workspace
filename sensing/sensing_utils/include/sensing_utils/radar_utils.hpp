@@ -139,7 +139,7 @@ inline Vector3 compensateEgoVehicleTwist(
   geometry_msgs::msg::Vector3Stamped velocity_stamped{};
   velocity_stamped.vector = ego_vehicle_twist_with_covariance.twist.linear;
   geometry_msgs::msg::Vector3Stamped transformed_velocity_stamped{};
-  tf2::doTransform(velocity_stamped, transformed_velocity_stamped, transform_);
+  tf2::doTransform(velocity_stamped, transformed_velocity_stamped, transform);
 
   // Compensate doppler velocity with ego vehicle twist
   const auto v_e = ego_vehicle_twist_with_covariance.twist.linear;
