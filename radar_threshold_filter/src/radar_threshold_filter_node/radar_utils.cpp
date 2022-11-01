@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "tier4_autoware_utils/tier4_autoware_utils.hpp"
+
+#include <geometry_msgs/msg/pose_with_covariance.hpp>
+#include <geometry_msgs/msg/twist_with_covariance.hpp>
+#include <radar_msgs/msg/radar_scan.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+
 #include <pcl/pcl_base.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 
 #include <cmath>
-#include <geometry_msgs/msg/pose_with_covariance.hpp>
-#include <geometry_msgs/msg/twist_with_covariance.hpp>
-#include <radar_msgs/msg/radar_scan.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
-
-#include "tier4_autoware_utils/tier4_autoware_utils.hpp"
 
 #ifdef ROS_DISTRO_GALACTIC
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -58,9 +59,9 @@ LinearRing2d toLinearRing2d(
       createRectangle(shape.dimensions.x, shape.dimensions.y),
       tier4_autoware_utils::pose2transform(pose));
   } else if (shape.type == autoware_auto_perception_msgs::msg::Shape::CYLINDER) {
-    // 実装する
+    // TODO
   } else if (shape.type == autoware_auto_perception_msgs::msg::Shape::POLYGON) {
-    // 実装する
+    // TODO
   }
 }
 
@@ -126,7 +127,8 @@ inline TwistWithCovariance getTwistWithCovariance(const RadarReturn & radar)
   return tier4_autoware_utils::getTwistWithCovariance(getVelocity(radar), angular);
 }
 
-/// @brief Compensate ego vehicle twist. Doppler velocity compensated by ego vehicle in sensor coordinate.
+/// @brief Compensate ego vehicle twist. Doppler velocity compensated by ego vehicle in sensor
+/// coordinate.
 /// @param radar: Radar return
 /// @param ego_vehicle_twist_with_covariance: The twist of ego vehicle
 /// @param transform: transform
