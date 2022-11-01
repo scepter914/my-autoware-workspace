@@ -32,7 +32,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #endif
 
-namespace sensing_utils
+namespace
 {
 using geometry_msgs::msg::Point;
 using geometry_msgs::msg::Twist;
@@ -42,7 +42,7 @@ using radar_msgs::msg::RadarReturn;
 using radar_msgs::msg::RadarScan;
 using sensor_msgs::msg::PointCloud2;
 
-inline Point getPoint(const RadarReturn & radar)
+inline geometry_msgs::msg::Point getPoint(const RadarReturn & radar)
 {
   const auto x = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
   const auto y = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
@@ -50,30 +50,24 @@ inline Point getPoint(const RadarReturn & radar)
   return geometry_msgs::build<Point>().x(x).y(y).z(z);
 }
 
-inline Vector3 getVelocity(const RadarReturn & radar)
+inline geometry_msgs::msg::Vector3 getVelocity(const RadarReturn & radar)
 {
   const auto vx = radar.doppler_velocity * std::sin(radar.azimuth) * std::cos(radar.elevation);
   const auto vz = radar.doppler_velocity * std::sin(radar.elevation);
   return geometry_msgs::build<Vector3>().x(vx).y(0.0).z(vz);
 }
 
-inline Twist getTwist(const RadarReturn & radar)
+inline geometry_msgs::msg::Twist getTwist(const RadarReturn & radar)
 {
   auto angular = tier4_autoware_utils::createVector3(0.0, 0.0, 0.0);
-  return tier4_autoware_utils::getTwist(getVelocity(radar), angular);
+  return tier4_autoware_utils::createTwist(getVelocity(radar), angular);
 }
 
-inline Vector3 getVelocity(const RadarReturn & radar)
+inline geometry_msgs::msg::Vector3 getVelocity(const RadarReturn & radar)
 {
   const auto vx = radar.doppler_velocity * std::sin(radar.azimuth) * std::cos(radar.elevation);
   const auto vz = radar.doppler_velocity * std::sin(radar.elevation);
   return geometry_msgs::build<Vector3>().x(vx).y(0.0).z(vz);
-}
-
-inline TwistWithCovariance getTwistWithCovariance(const RadarReturn & radar)
-{
-  auto angular = tier4_autoware_utils::createVector3(0.0, 0.0, 0.0);
-  return tier4_autoware_utils::getTwistWithCovariance(getVelocity(radar), angular);
 }
 
 /// @brief Compensate ego vehicle twist. Doppler velocity compensated by ego vehicle in sensor
@@ -117,4 +111,4 @@ inline pcl::PointCloud<pcl::PointXYZI> toAmplitudePCL(const RadarScan & radar_sc
   return output;
 }
 
-}  // namespace sensing_utils
+}  // namespace
