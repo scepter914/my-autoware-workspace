@@ -18,8 +18,8 @@ ament_auto_find_build_dependencies()
 
 # Targets
 ament_auto_add_library(my_utils_node_component SHARED
-  src/my_utils_node/my_utils.cpp
-  src/my_utils_node/my_utils_node.cpp
+  src/my_utils_node/twist_utils.cpp
+  src/my_utils_node/linear2d_utils.cpp
 )
 
 rclcpp_components_register_node(my_utils_node_component
@@ -38,6 +38,5 @@ endif()
 # Package
 ament_auto_package(
   INSTALL_TO_SHARE
-    config
-    launch
+  launch
 )
