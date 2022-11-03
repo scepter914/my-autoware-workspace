@@ -6,17 +6,17 @@
 
 namespace
 {
-inline double calcTwistNorm(const geometry_msgs::msg::Twist & twist)
+double calcTwistNorm(const geometry_msgs::msg::Twist & twist)
 {
-  return calcTwistNorm(twist.linear);
+  return tier4_autoware_utils::calcNorm(twist.linear);
 }
 
-inline double calcTwistNorm(const geometry_msgs::msg::TwistWithCovariance & twist_with_covariance)
+double calcTwistNorm(const geometry_msgs::msg::TwistWithCovariance & twist_with_covariance)
 {
-  return calcTwistNorm(twist_with_covariance.twist.linear);
+  return tier4_autoware_utils::calcNorm(twist_with_covariance.twist.linear);
 }
 
-inline geometry_msgs::msg::TwistWithCovariance createTwistWithCovariance(
+geometry_msgs::msg::TwistWithCovariance createTwistWithCovariance(
   const geometry_msgs::msg::Twist & twist)
 {
   geometry_msgs::msg::TwistWithCovariance twist_with_covariance;
@@ -24,9 +24,33 @@ inline geometry_msgs::msg::TwistWithCovariance createTwistWithCovariance(
   return twist_with_covariance;
 }
 
-inline geometry_msgs::msg::TwistWithCovariance createTwistWithCovariance(
+geometry_msgs::msg::TwistWithCovariance createTwistWithCovariance(
   const geometry_msgs::msg::Vector3 & velocity, geometry_msgs::msg::Vector3 & angular)
 {
   return createTwistWithCovariance(tier4_autoware_utils::createTwist(velocity, angular));
+}
+
+Eigen::Vector2d toVector2d(const geometry_msgs::msg::Twist & twist)
+{
+  return Eigen::Vector2d{twist.linear.x, twist.linear.y};
+}
+
+Eigen::Vector2d toVector2d(const geometry_msgs::msg::TwistWithCovariance & twist_with_covariance)
+{
+  return toVector2d(twist_with_covariance.twist);
+}
+
+geometry_msgs::msg::Twist toTwist(const Eigen::Vector2d & vector)
+{
+  geometry_msgs::msg::Twist twist;
+  twist.linear = tier4_autoware_utils::createVector3(vector(0), vector(1), 0.0);
+  return twist;
+}
+
+geometry_msgs::msg::Twist toTwistWithCovariance(const Eigen::Vector2d & vector)
+{
+  return tier4_autoware_utils::createTwist(
+    tier4_autoware_utils::createVector3(vector.x, vector.y, 0.0),
+    tier4_autoware_utils::createVector3(0.0, 0.0, 0.0));
 }
 }  // namespace
