@@ -15,14 +15,14 @@
 #ifndef RADAR_THRESHOLD_FILTER__RADAR_THRESHOLD_FILTER_NODE_HPP__
 #define RADAR_THRESHOLD_FILTER__RADAR_THRESHOLD_FILTER_NODE_HPP__
 
+#include "rclcpp/rclcpp.hpp"
+
+#include <radar_msgs/msg/radar_scan.hpp>
+
 #include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "example_interfaces/msg/int32.hpp"
-#include "radar_threshold_filter/radar_threshold_filter.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 namespace radar_threshold_filter
 {
