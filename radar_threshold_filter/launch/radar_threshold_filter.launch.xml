@@ -7,7 +7,6 @@
 
   <!-- Parameter -->
   <arg name="config_file" default="$(find-pkg-share radar_threshold_filter)/config/radar_threshold_filter.param.yaml" />
-  <arg name="update_rate_hz" default="10.0" />
 
   <!-- Node -->
   <node pkg="radar_threshold_filter" exec="radar_threshold_filter_node" name="radar_threshold_filter" output="screen">

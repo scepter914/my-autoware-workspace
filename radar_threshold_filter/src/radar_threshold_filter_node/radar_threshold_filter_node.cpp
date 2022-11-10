@@ -61,14 +61,14 @@ RadarThresholdFilterNode::RadarThresholdFilterNode(const rclcpp::NodeOptions & n
   // Node Parameter
   node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 20.0);
   node_param_.is_amplitude_filter =
-    declare_parameter<double>("node_params.is_amplitude_filter", false);
+    declare_parameter<bool>("node_params.is_amplitude_filter", false);
   node_param_.amplitude_min = declare_parameter<double>("node_params.amplitude_min", 0.0);
   node_param_.amplitude_max = declare_parameter<double>("node_params.amplitude_max", 0.0);
-  node_param_.is_range_filter = declare_parameter<double>("node_params.is_range_filter", false);
+  node_param_.is_range_filter = declare_parameter<bool>("node_params.is_range_filter", false);
   node_param_.range_min = declare_parameter<double>("node_params.range_min", 0.0);
   node_param_.range_max = declare_parameter<double>("node_params.range_max", 0.0);
   node_param_.is_angle_azimuth_filter =
-    declare_parameter<double>("node_params.is_angle_azimuth_filter", false);
+    declare_parameter<bool>("node_params.is_angle_azimuth_filter", false);
   node_param_.angle_azimuth_min = declare_parameter<double>("node_params.angle_azimuth_min", 0.0);
   node_param_.angle_azimuth_max = declare_parameter<double>("node_params.angle_azimuth_max", 0.0);
 
@@ -121,7 +121,15 @@ void RadarThresholdFilterNode::onTimer()
   if (!isDataReady()) {
     return;
   }
+
   RadarScan output;
+  output.header = radar_data_->header;
+  for (const auto & radar_return : radar_data_->returns) {
+    if (isWithinThreshold(radar_return)) {
+      output.returns.push_back(radar_return);
+    }
+  }
+
   pub_radar_->publish(output);
 }
 

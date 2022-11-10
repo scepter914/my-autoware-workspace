@@ -79,7 +79,7 @@ private:
   NodeParam node_param_{};
 
   // Function
-  bool RadarThresholdFilterNode::isWithinThreshold(const RadarReturn & radar_return);
+  bool isWithinThreshold(const RadarReturn & radar_return);
 };
 
 }  // namespace radar_threshold_filter
