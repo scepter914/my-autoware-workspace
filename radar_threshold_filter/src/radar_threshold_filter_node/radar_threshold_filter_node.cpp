@@ -60,6 +60,17 @@ RadarThresholdFilterNode::RadarThresholdFilterNode(const rclcpp::NodeOptions & n
 
   // Node Parameter
   node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 20.0);
+  node_param_.is_amplitude_filter =
+    declare_parameter<double>("node_params.is_amplitude_filter", false);
+  node_param_.amplitude_min = declare_parameter<double>("node_params.amplitude_min", 0.0);
+  node_param_.amplitude_max = declare_parameter<double>("node_params.amplitude_max", 0.0);
+  node_param_.is_range_filter = declare_parameter<double>("node_params.is_range_filter", false);
+  node_param_.range_min = declare_parameter<double>("node_params.range_min", 0.0);
+  node_param_.range_max = declare_parameter<double>("node_params.range_max", 0.0);
+  node_param_.is_angle_azimuth_filter =
+    declare_parameter<double>("node_params.is_angle_azimuth_filter", false);
+  node_param_.angle_azimuth_min = declare_parameter<double>("node_params.angle_azimuth_min", 0.0);
+  node_param_.angle_azimuth_max = declare_parameter<double>("node_params.angle_azimuth_max", 0.0);
 
   // Subscriber
   sub_radar_ = create_subscription<RadarScan>(
@@ -112,6 +123,47 @@ void RadarThresholdFilterNode::onTimer()
   }
   RadarScan output;
   pub_radar_->publish(output);
+}
+
+bool RadarThresholdFilterNode::isWithinThreshold(const RadarReturn & radar_return)
+{
+  if (node_param_.is_amplitude_filter) {
+    if (radar_return.amplitude < node_param_.amplitude_min) {
+      return false;
+    }
+    if (node_param_.amplitude_max < radar_return.amplitude) {
+      return false;
+    }
+  }
+
+  if (node_param_.is_range_filter) {
+    if (radar_return.range < node_param_.range_min) {
+      return false;
+    }
+    if (node_param_.range_max < radar_return.range) {
+      return false;
+    }
+  }
+
+  if (node_param_.is_angle_azimuth_filter) {
+    if (radar_return.azimuth < node_param_.angle_azimuth_min) {
+      return false;
+    }
+    if (node_param_.angle_azimuth_max < radar_return.azimuth) {
+      return false;
+    }
+  }
+
+  if (node_param_.is_z_filter) {
+    const auto z = radar_return.range * std::sin(radar_return.elevation);
+    if (z < node_param_.z_min) {
+      return false;
+    }
+    if (node_param_.z_max < z) {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace radar_threshold_filter

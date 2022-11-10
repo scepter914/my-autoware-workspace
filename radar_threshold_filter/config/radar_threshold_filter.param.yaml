@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     node_params:
-      update_rate_hz: 10.0
+      update_rate_hz: 20.0
       is_amplitude_filter: true
       amplitude_min: -10.0
       amplitude_max: 100.0

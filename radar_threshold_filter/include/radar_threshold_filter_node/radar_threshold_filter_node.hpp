@@ -37,6 +37,18 @@ public:
   struct NodeParam
   {
     double update_rate_hz{};
+    bool is_amplitude_filter{};
+    double amplitude_min{};
+    double amplitude_max{};
+    bool is_range_filter{};
+    double range_min{};
+    double range_max{};
+    bool is_angle_azimuth_filter{};
+    double angle_azimuth_min{};
+    double angle_azimuth_max{};
+    bool is_z_filter{};
+    double z_min{};
+    double z_max{};
   };
 
 private:
@@ -65,6 +77,9 @@ private:
 
   // Parameter
   NodeParam node_param_{};
+
+  // Function
+  bool RadarThresholdFilterNode::isWithinThreshold(const RadarReturn & radar_return);
 };
 
 }  // namespace radar_threshold_filter
