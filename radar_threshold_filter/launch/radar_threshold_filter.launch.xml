@@ -1,9 +1,9 @@
 <launch>
   <!-- Input -->
-  <arg name="input/data" default="~/input/data" />
+  <arg name="input/radar" default="input/radar" />
 
   <!-- Output -->
-  <arg name="output/data" default="~/output/data" />
+  <arg name="output/radar" default="output/threshold_filtered_point" />
 
   <!-- Parameter -->
   <arg name="config_file" default="$(find-pkg-share radar_threshold_filter)/config/radar_threshold_filter.param.yaml" />
@@ -11,14 +11,8 @@
 
   <!-- Node -->
   <node pkg="radar_threshold_filter" exec="radar_threshold_filter_node" name="radar_threshold_filter" output="screen">
-    <!-- Input -->
-    <remap from="~/input/data" to="$(var input/data)"/>
-
-    <!-- Output -->
-    <remap from="~/output/data" to="$(var output/data)"/>
-
-    <!-- Parameter -->
+    <remap from="~/input/radar" to="$(var input/radar)"/>
+    <remap from="~/output/radar" to="$(var output/radar)"/>
     <param from="$(var config_file)" />
-    <param name="update_rate_hz" value="$(var update_rate_hz)"/>
   </node>
 </launch>
