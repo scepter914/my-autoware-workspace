@@ -15,14 +15,13 @@
 #ifndef RADAR_SCAN_TO_POINTCLOUD2__RADAR_SCAN_TO_POINTCLOUD2_NODE_HPP__
 #define RADAR_SCAN_TO_POINTCLOUD2__RADAR_SCAN_TO_POINTCLOUD2_NODE_HPP__
 
+#include "example_interfaces/msg/int32.hpp"
+#include "rclcpp/rclcpp.hpp"
+
 #include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "example_interfaces/msg/int32.hpp"
-#include "radar_scan_to_pointcloud2/radar_scan_to_pointcloud2.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 namespace radar_scan_to_pointcloud2
 {

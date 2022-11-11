@@ -14,6 +14,11 @@
 
 #include "radar_scan_to_pointcloud2/radar_scan_to_pointcloud2_node.hpp"
 
+#include <pcl/pcl_base.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -42,6 +47,33 @@ bool update_param(
   value = itr->template get_value<T>();
   return true;
 }
+
+geometry_msgs::msg::Point getPoint(const radar_msgs::msg::RadarReturn & radar)
+{
+  const auto x = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
+  const auto y = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
+  const auto z = radar.range * std::sin(radar.elevation);
+  return geometry_msgs::build<geometry_msgs::msg::Point>().x(x).y(y).z(z);
+}
+
+pcl::PointCloud<pcl::PointXYZI> toAmplitudePCL(const radar_msgs::msg::RadarScan & radar_scan)
+{
+  pcl::PointCloud<pcl::PointXYZI> output;
+  for (const auto & radar : radar_scan.returns) {
+    auto point = getPoint(radar);
+    output.push_back(pcl::PointXYZI{point.x, point.y, point.z, radar.amplitude});
+  }
+  return output;
+}
+
+sensor_msgs::msg::PointCloud2 toAmplitudePointcloud2(const radar_msgs::msg::RadarScan & radar_scan)
+{
+  sensor_msgs::msg::PointCloud2 pointcloud_msg;
+  auto pcl_pointcloud = toAmplitudePCL(radar_scan);
+  pcl::toROSMsg(pcl_pointcloud, pointcloud_msg);
+  pointcloud_msg.header = radar_scan.header;
+  return pointcloud_msg;
+}
 }  // namespace
 
 namespace radar_scan_to_pointcloud2
@@ -50,8 +82,8 @@ RadarScanToPointcloud2Node::RadarScanToPointcloud2Node(const rclcpp::NodeOptions
 : Node("radar_scan_to_pointcloud2", node_options)
 {
   // Parameter Server
-  set_param_res_ =
-    this->add_on_set_parameters_callback(std::bind(&RadarScanToPointcloud2Node::onSetParam, this, _1));
+  set_param_res_ = this->add_on_set_parameters_callback(
+    std::bind(&RadarScanToPointcloud2Node::onSetParam, this, _1));
 
   // Node Parameter
   node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
