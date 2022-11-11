@@ -21,40 +21,33 @@
 
 namespace
 {
-using geometry_msgs::msg::Point;
-using geometry_msgs::msg::Twist;
-using geometry_msgs::msg::TwistWithCovariance;
-using geometry_msgs::msg::Vector3;
-using radar_msgs::msg::RadarReturn;
-using radar_msgs::msg::RadarScan;
-using sensor_msgs::msg::PointCloud2;
 
-inline geometry_msgs::msg::Point getPoint(const RadarReturn & radar)
+geometry_msgs::msg::Point getPoint(const radar_msgs::msg::RadarReturn & radar)
 {
   const auto x = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
   const auto y = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
   const auto z = radar.range * std::sin(radar.elevation);
-  return geometry_msgs::build<Point>().x(x).y(y).z(z);
+  return geometry_msgs::build<geometry_msgs::msg::Point>().x(x).y(y).z(z);
 }
 
-inline geometry_msgs::msg::Vector3 getVelocity(const RadarReturn & radar)
+geometry_msgs::msg::Vector3 getVelocity(const radar_msgs::msg::RadarReturn & radar)
 {
   const auto vx = radar.doppler_velocity * std::sin(radar.azimuth) * std::cos(radar.elevation);
   const auto vz = radar.doppler_velocity * std::sin(radar.elevation);
-  return geometry_msgs::build<Vector3>().x(vx).y(0.0).z(vz);
+  return geometry_msgs::build<geometry_msgs::msg::Vector3>().x(vx).y(0.0).z(vz);
 }
 
-inline geometry_msgs::msg::Twist getTwist(const RadarReturn & radar)
+geometry_msgs::msg::Twist getTwist(const radar_msgs::msg::RadarReturn & radar)
 {
   auto angular = tier4_autoware_utils::createVector3(0.0, 0.0, 0.0);
   return tier4_autoware_utils::createTwist(getVelocity(radar), angular);
 }
 
-inline geometry_msgs::msg::Vector3 getVelocity(const RadarReturn & radar)
+geometry_msgs::msg::Vector3 getVelocity(const radar_msgs::msg::RadarReturn & radar)
 {
   const auto vx = radar.doppler_velocity * std::sin(radar.azimuth) * std::cos(radar.elevation);
   const auto vz = radar.doppler_velocity * std::sin(radar.elevation);
-  return geometry_msgs::build<Vector3>().x(vx).y(0.0).z(vz);
+  return geometry_msgs::build<geometry_msgs::msg::Vector3>().x(vx).y(0.0).z(vz);
 }
 
 /// @brief Compensate ego vehicle twist. Doppler velocity compensated by ego vehicle in sensor
@@ -63,8 +56,9 @@ inline geometry_msgs::msg::Vector3 getVelocity(const RadarReturn & radar)
 /// @param ego_vehicle_twist_with_covariance: The twist of ego vehicle
 /// @param transform: transform
 /// @return
-inline Vector3 compensateEgoVehicleTwist(
-  const RadarReturn & radar, const TwistWithCovariance & ego_vehicle_twist_with_covariance,
+geometry_msgs::msg::Vector3 compensateEgoVehicleTwist(
+  const radar_msgs::msg::RadarReturn & radar,
+  const geometry_msgs::msg::TwistWithCovariance & ego_vehicle_twist_with_covariance,
   const geometry_msgs::msg::TransformStamped & transform)
 {
   // transform to sensor coordinate
@@ -76,19 +70,13 @@ inline Vector3 compensateEgoVehicleTwist(
   // Compensate doppler velocity with ego vehicle twist
   const auto v_e = ego_vehicle_twist_with_covariance.twist.linear;
   const auto v_r = getVelocity(radar);
-  return tf2::Vector3(v_r.x - v_e.x, v_r.y - v_e.y, v_r.z - v_e.z);
+  return geometry_msgs::build<geometry_msgs::msg::Vector3>()
+    .x(v_r.x - v_e.x)
+    .y(v_r.y - v_e.y)
+    .z(v_r.z - v_e.z);
 }
 
-inline PointCloud2 toAmplitudePointcloud2(const RadarScan & radar_scan)
-{
-  PointCloud2 pointcloud_msg;
-  auto pcl_pointcloud = toAmplitudePCL(radar_scan);
-  pcl::toROSMsg(pcl_pointcloud, pointcloud_msg);
-  pointcloud_msg.header = radar_scan.header;
-  return pointcloud_msg;
-}
-
-inline pcl::PointCloud<pcl::PointXYZI> toAmplitudePCL(const RadarScan & radar_scan)
+pcl::PointCloud<pcl::PointXYZI> toAmplitudePCL(const radar_msgs::msg::RadarScan & radar_scan)
 {
   pcl::PointCloud<pcl::PointXYZI> output;
   for (const auto & radar : radar_scan.returns) {
@@ -96,6 +84,15 @@ inline pcl::PointCloud<pcl::PointXYZI> toAmplitudePCL(const RadarScan & radar_sc
     output.push_back(pcl::PointXYZI{point.x, point.y, point.z, radar.amplitude});
   }
   return output;
+}
+
+sensor_msgs::msg::PointCloud2 toAmplitudePointcloud2(const radar_msgs::msg::RadarScan & radar_scan)
+{
+  sensor_msgs::msg::PointCloud2 pointcloud_msg;
+  auto pcl_pointcloud = toAmplitudePCL(radar_scan);
+  pcl::toROSMsg(pcl_pointcloud, pointcloud_msg);
+  pointcloud_msg.header = radar_scan.header;
+  return pointcloud_msg;
 }
 
 }  // namespace
