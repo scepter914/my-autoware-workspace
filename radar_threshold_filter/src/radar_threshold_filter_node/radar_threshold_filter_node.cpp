@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "radar_threshold_filter_node/radar_threshold_filter_node.hpp"
+#include "radar_threshold_filter/radar_threshold_filter_node.hpp"
 
 #include <radar_msgs/msg/radar_scan.hpp>
 
