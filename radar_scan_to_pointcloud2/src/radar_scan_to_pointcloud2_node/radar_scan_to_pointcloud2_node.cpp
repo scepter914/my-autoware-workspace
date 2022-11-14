@@ -19,10 +19,6 @@
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 
-#include <memory>
-#include <string>
-#include <vector>
-
 using namespace std::literals;
 using std::chrono::duration;
 using std::chrono::duration_cast;
@@ -78,6 +74,9 @@ sensor_msgs::msg::PointCloud2 toAmplitudePointcloud2(const radar_msgs::msg::Rada
 
 namespace radar_scan_to_pointcloud2
 {
+using radar_msgs::msg::RadarReturn;
+using radar_msgs::msg::RadarScan;
+
 RadarScanToPointcloud2Node::RadarScanToPointcloud2Node(const rclcpp::NodeOptions & node_options)
 : Node("radar_scan_to_pointcloud2", node_options)
 {
@@ -88,19 +87,12 @@ RadarScanToPointcloud2Node::RadarScanToPointcloud2Node(const rclcpp::NodeOptions
   // Node Parameter
   node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
 
-  // Core Parameter
-  core_param_.data = declare_parameter<int>("core_params.data");
-
-  // Core
-  radar_scan_to_pointcloud2_ = std::make_unique<RadarScanToPointcloud2>(get_logger());
-  radar_scan_to_pointcloud2_->setParam(core_param_);
-
   // Subscriber
-  sub_data_ = create_subscription<Int32>(
-    "~/input/data", rclcpp::QoS{1}, std::bind(&RadarScanToPointcloud2Node::onData, this, _1));
+  sub_data_ = create_subscription<RadarScan>(
+    "~/input/radar", rclcpp::QoS{1}, std::bind(&RadarScanToPointcloud2Node::onData, this, _1));
 
   // Publisher
-  pub_data_ = create_publisher<Int32>("~/output/data", 1);
+  pub_data_ = create_publisher<RadarScan>("~/output/radar", 1);
 
   // Timer
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
@@ -108,7 +100,7 @@ RadarScanToPointcloud2Node::RadarScanToPointcloud2Node(const rclcpp::NodeOptions
     this, get_clock(), update_period_ns, std::bind(&RadarScanToPointcloud2Node::onTimer, this));
 }
 
-void RadarScanToPointcloud2Node::onData(const Int32::ConstSharedPtr msg) { data_ = msg; }
+void RadarScanToPointcloud2Node::onData(const RadarScan::ConstSharedPtr msg) { radar_data_ = msg; }
 
 rcl_interfaces::msg::SetParametersResult RadarScanToPointcloud2Node::onSetParam(
   const std::vector<rclcpp::Parameter> & params)
@@ -116,32 +108,13 @@ rcl_interfaces::msg::SetParametersResult RadarScanToPointcloud2Node::onSetParam(
   rcl_interfaces::msg::SetParametersResult result;
 
   try {
-    // Node Parameter
-    {
-      auto & p = node_param_;
-
-      // Update params
-      update_param(params, "node_params.update_rate_hz", p.update_rate_hz);
-    }
-
-    // Core Parameter
-    {
-      auto & p = core_param_;
-
-      // Update params
-      update_param(params, "core_params.data", p.data);
-
-      // Set parameter to instance
-      if (radar_scan_to_pointcloud2_) {
-        radar_scan_to_pointcloud2_->setParam(core_param_);
-      }
-    }
+    auto & p = node_param_;
+    update_param(params, "node_params.update_rate_hz", p.update_rate_hz);
   } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
     result.successful = false;
     result.reason = e.what();
     return result;
   }
-
   result.successful = true;
   result.reason = "success";
   return result;
@@ -149,11 +122,10 @@ rcl_interfaces::msg::SetParametersResult RadarScanToPointcloud2Node::onSetParam(
 
 bool RadarScanToPointcloud2Node::isDataReady()
 {
-  if (!data_) {
-    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for data msg...");
+  if (!radar_data_) {
+    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for radar msg...");
     return false;
   }
-
   return true;
 }
 
@@ -162,18 +134,8 @@ void RadarScanToPointcloud2Node::onTimer()
   if (!isDataReady()) {
     return;
   }
-
-  // Set input data
-  RadarScanToPointcloud2::Input input;
-
-  input.data = data_->data;
-
-  // Update
-  output_ = radar_scan_to_pointcloud2_->update(input);
-
-  // Sample
-  pub_data_->publish(example_interfaces::build<Int32>().data(output_.data));
-  // pub_data->publish(hoge_msgs);
+  RadarScan output;
+  pub_data->publish(output);
 
   RCLCPP_INFO(get_logger(), "input, output: %d, %d", input_.data, output_.data);
 }
