@@ -109,7 +109,7 @@ rcl_interfaces::msg::SetParametersResult RadarThresholdFilterNode::onSetParam(
 bool RadarThresholdFilterNode::isDataReady()
 {
   if (!radar_data_) {
-    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for data msg...");
+    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for radar msg...");
     return false;
   }
 
