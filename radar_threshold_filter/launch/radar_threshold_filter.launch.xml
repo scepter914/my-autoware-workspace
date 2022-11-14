@@ -1,11 +1,6 @@
 <launch>
-  <!-- Input -->
   <arg name="input/radar" default="input/radar" />
-
-  <!-- Output -->
-  <arg name="output/radar" default="output/threshold_filtered_point" />
-
-  <!-- Parameter -->
+  <arg name="output/radar" default="output/threshold_filtered_radar" />
   <arg name="config_file" default="$(find-pkg-share radar_threshold_filter)/config/radar_threshold_filter.param.yaml" />
 
   <!-- Node -->
