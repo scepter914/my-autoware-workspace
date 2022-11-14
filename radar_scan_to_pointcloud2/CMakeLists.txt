@@ -18,7 +18,6 @@ ament_auto_find_build_dependencies()
 
 # Targets
 ament_auto_add_library(radar_scan_to_pointcloud2_node_component SHARED
-  src/radar_scan_to_pointcloud2_node/radar_scan_to_pointcloud2.cpp
   src/radar_scan_to_pointcloud2_node/radar_scan_to_pointcloud2_node.cpp
 )
 
@@ -38,5 +37,5 @@ endif()
 # Package
 ament_auto_package(
   INSTALL_TO_SHARE
-    launch
+  launch
 )
