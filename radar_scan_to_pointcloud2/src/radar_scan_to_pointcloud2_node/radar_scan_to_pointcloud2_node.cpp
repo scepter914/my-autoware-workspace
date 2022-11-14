@@ -14,6 +14,8 @@
 
 #include "radar_scan_to_pointcloud2/radar_scan_to_pointcloud2_node.hpp"
 
+#include <geometry_msgs/msg/point.hpp>
+
 #include <pcl/pcl_base.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -76,6 +78,7 @@ namespace radar_scan_to_pointcloud2
 {
 using radar_msgs::msg::RadarReturn;
 using radar_msgs::msg::RadarScan;
+using sensor_msgs::msg::PointCloud2;
 
 RadarScanToPointcloud2Node::RadarScanToPointcloud2Node(const rclcpp::NodeOptions & node_options)
 : Node("radar_scan_to_pointcloud2", node_options)
@@ -88,11 +91,11 @@ RadarScanToPointcloud2Node::RadarScanToPointcloud2Node(const rclcpp::NodeOptions
   node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
 
   // Subscriber
-  sub_data_ = create_subscription<RadarScan>(
+  sub_radar_ = create_subscription<RadarScan>(
     "~/input/radar", rclcpp::QoS{1}, std::bind(&RadarScanToPointcloud2Node::onData, this, _1));
 
   // Publisher
-  pub_data_ = create_publisher<RadarScan>("~/output/radar", 1);
+  pub_pointcloud_ = create_publisher<PointCloud2>("~/output/pointcloud", 1);
 
   // Timer
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
@@ -134,10 +137,8 @@ void RadarScanToPointcloud2Node::onTimer()
   if (!isDataReady()) {
     return;
   }
-  RadarScan output;
-  pub_data->publish(output);
-
-  RCLCPP_INFO(get_logger(), "input, output: %d, %d", input_.data, output_.data);
+  sensor_msgs::msg::PointCloud2 output = toAmplitudePointcloud2(*radar_data_);
+  pub_pointcloud_->publish(output);
 }
 
 }  // namespace radar_scan_to_pointcloud2

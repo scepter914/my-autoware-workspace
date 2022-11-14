@@ -18,6 +18,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include <radar_msgs/msg/radar_scan.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 
 #include <chrono>
 #include <memory>
@@ -28,6 +29,7 @@ namespace radar_scan_to_pointcloud2
 {
 using radar_msgs::msg::RadarReturn;
 using radar_msgs::msg::RadarScan;
+using sensor_msgs::msg::PointCloud2;
 
 class RadarScanToPointcloud2Node : public rclcpp::Node
 {
@@ -50,7 +52,7 @@ private:
   RadarScan::ConstSharedPtr radar_data_{};
 
   // Publisher
-  rclcpp::Publisher<RadarScan>::SharedPtr pub_radar_{};
+  rclcpp::Publisher<PointCloud2>::SharedPtr pub_pointcloud_{};
 
   // Timer
   rclcpp::TimerBase::SharedPtr timer_{};
