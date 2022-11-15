@@ -7,7 +7,7 @@
       amplitude_max: 100.0
 
       is_range_filter: false
-      range_min: 50.0
+      range_min: 20.0
       range_max: 300.0
 
       is_angle_azimuth_filter: true
