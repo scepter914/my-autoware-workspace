@@ -1,0 +1,24 @@
+<launch>
+  <!-- Input -->
+  <arg name="input/data" default="~/input/data" />
+
+  <!-- Output -->
+  <arg name="output/data" default="~/output/data" />
+
+  <!-- Parameter -->
+  <arg name="config_file" default="$(find-pkg-share radar_static_pointcloud_filter)/config/radar_static_pointcloud_filter.param.yaml" />
+  <arg name="update_rate_hz" default="10.0" />
+
+  <!-- Node -->
+  <node pkg="radar_static_pointcloud_filter" exec="radar_static_pointcloud_filter_node" name="radar_static_pointcloud_filter" output="screen">
+    <!-- Input -->
+    <remap from="~/input/data" to="$(var input/data)"/>
+
+    <!-- Output -->
+    <remap from="~/output/data" to="$(var output/data)"/>
+
+    <!-- Parameter -->
+    <param from="$(var config_file)" />
+    <param name="update_rate_hz" value="$(var update_rate_hz)"/>
+  </node>
+</launch>
