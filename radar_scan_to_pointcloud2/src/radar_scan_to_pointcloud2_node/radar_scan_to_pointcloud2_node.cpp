@@ -14,8 +14,6 @@
 
 #include "radar_scan_to_pointcloud2/radar_scan_to_pointcloud2_node.hpp"
 
-#include <geometry_msgs/msg/point.hpp>
-
 #include <pcl/pcl_base.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -46,22 +44,21 @@ bool update_param(
   return true;
 }
 
-geometry_msgs::msg::Point getPoint(const radar_msgs::msg::RadarReturn & radar)
+pcl::PointXYZI getPointXYZI(const radar_msgs::msg::RadarReturn & radar)
 {
-  const auto x = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
-  const auto y = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
-  const auto z = radar.range * std::sin(radar.elevation);
-  return geometry_msgs::build<geometry_msgs::msg::Point>().x(x).y(y).z(z);
+  const float x = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
+  const float y = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
+  const float z = radar.range * std::sin(radar.elevation);
+  return pcl::PointXYZI{x, y, z, radar.amplitude};
 }
 
 pcl::PointCloud<pcl::PointXYZI> toAmplitudePCL(const radar_msgs::msg::RadarScan & radar_scan)
 {
-  pcl::PointCloud<pcl::PointXYZI> output;
+  pcl::PointCloud<pcl::PointXYZI> pcl;
   for (const auto & radar : radar_scan.returns) {
-    auto point = getPoint(radar);
-    output.push_back(pcl::PointXYZI{point.x, point.y, point.z, radar.amplitude});
+    pcl.push_back(getPointXYZI(radar));
   }
-  return output;
+  return pcl;
 }
 
 sensor_msgs::msg::PointCloud2 toAmplitudePointcloud2(const radar_msgs::msg::RadarScan & radar_scan)
