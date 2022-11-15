@@ -43,13 +43,6 @@ geometry_msgs::msg::Twist getTwist(const radar_msgs::msg::RadarReturn & radar)
   return tier4_autoware_utils::createTwist(getVelocity(radar), angular);
 }
 
-geometry_msgs::msg::Vector3 getVelocity(const radar_msgs::msg::RadarReturn & radar)
-{
-  const auto vx = radar.doppler_velocity * std::sin(radar.azimuth) * std::cos(radar.elevation);
-  const auto vz = radar.doppler_velocity * std::sin(radar.elevation);
-  return geometry_msgs::build<geometry_msgs::msg::Vector3>().x(vx).y(0.0).z(vz);
-}
-
 /// @brief Compensate ego vehicle twist. Doppler velocity compensated by ego vehicle in sensor
 /// coordinate.
 /// @param radar: Radar return
@@ -76,14 +69,21 @@ geometry_msgs::msg::Vector3 compensateEgoVehicleTwist(
     .z(v_r.z - v_e.z);
 }
 
+pcl::PointXYZI getPointXYZI(const radar_msgs::msg::RadarReturn & radar)
+{
+  const float x = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
+  const float y = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
+  const float z = radar.range * std::sin(radar.elevation);
+  return pcl::PointXYZI{x, y, z, radar.amplitude};
+}
+
 pcl::PointCloud<pcl::PointXYZI> toAmplitudePCL(const radar_msgs::msg::RadarScan & radar_scan)
 {
-  pcl::PointCloud<pcl::PointXYZI> output;
+  pcl::PointCloud<pcl::PointXYZI> pcl;
   for (const auto & radar : radar_scan.returns) {
-    auto point = getPoint(radar);
-    output.push_back(pcl::PointXYZI{point.x, point.y, point.z, radar.amplitude});
+    pcl.push_back(getPointXYZI(radar));
   }
-  return output;
+  return pcl;
 }
 
 sensor_msgs::msg::PointCloud2 toAmplitudePointcloud2(const radar_msgs::msg::RadarScan & radar_scan)
