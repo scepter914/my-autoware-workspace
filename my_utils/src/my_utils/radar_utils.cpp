@@ -69,19 +69,27 @@ geometry_msgs::msg::Vector3 compensateEgoVehicleTwist(
     .z(v_r.z - v_e.z);
 }
 
-pcl::PointXYZI getPointXYZI(const radar_msgs::msg::RadarReturn & radar)
+pcl::PointXYZ getPointXYZ(const radar_msgs::msg::RadarReturn & radar)
 {
   const float x = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
   const float y = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
   const float z = radar.range * std::sin(radar.elevation);
-  return pcl::PointXYZI{x, y, z, radar.amplitude};
+  return pcl::PointXYZ{x, y, z};
+}
+
+pcl::PointXYZI getPointXYZI(const radar_msgs::msg::RadarReturn & radar, float intensity)
+{
+  const float x = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
+  const float y = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
+  const float z = radar.range * std::sin(radar.elevation);
+  return pcl::PointXYZI{x, y, z, intensity};
 }
 
 pcl::PointCloud<pcl::PointXYZI> toAmplitudePCL(const radar_msgs::msg::RadarScan & radar_scan)
 {
   pcl::PointCloud<pcl::PointXYZI> pcl;
   for (const auto & radar : radar_scan.returns) {
-    pcl.push_back(getPointXYZI(radar));
+    pcl.push_back(getPointXYZI(radar, radar.amplitude));
   }
   return pcl;
 }
@@ -95,4 +103,21 @@ sensor_msgs::msg::PointCloud2 toAmplitudePointcloud2(const radar_msgs::msg::Rada
   return pointcloud_msg;
 }
 
+pcl::PointCloud<pcl::PointXYZI> toDopplerPCL(const radar_msgs::msg::RadarScan & radar_scan)
+{
+  pcl::PointCloud<pcl::PointXYZI> pcl;
+  for (const auto & radar : radar_scan.returns) {
+    pcl.push_back(getPointXYZI(radar, radar.doppler_velocity));
+  }
+  return pcl;
+}
+
+sensor_msgs::msg::PointCloud2 toDopplerPointcloud2(const radar_msgs::msg::RadarScan & radar_scan)
+{
+  sensor_msgs::msg::PointCloud2 pointcloud_msg;
+  auto pcl_pointcloud = toDopplerPCL(radar_scan);
+  pcl::toROSMsg(pcl_pointcloud, pointcloud_msg);
+  pointcloud_msg.header = radar_scan.header;
+  return pointcloud_msg;
+}
 }  // namespace
