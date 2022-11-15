@@ -44,6 +44,16 @@ bool update_param(
   value = itr->template get_value<T>();
   return true;
 }
+
+bool isWithin(double value, double max, double min)
+{
+  if (min < value || value < max) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 }  // namespace
 
 namespace radar_threshold_filter
@@ -67,10 +77,9 @@ RadarThresholdFilterNode::RadarThresholdFilterNode(const rclcpp::NodeOptions & n
   node_param_.is_range_filter = declare_parameter<bool>("node_params.is_range_filter", false);
   node_param_.range_min = declare_parameter<double>("node_params.range_min", 0.0);
   node_param_.range_max = declare_parameter<double>("node_params.range_max", 0.0);
-  node_param_.is_angle_azimuth_filter =
-    declare_parameter<bool>("node_params.is_angle_azimuth_filter", false);
-  node_param_.angle_azimuth_min = declare_parameter<double>("node_params.angle_azimuth_min", 0.0);
-  node_param_.angle_azimuth_max = declare_parameter<double>("node_params.angle_azimuth_max", 0.0);
+  node_param_.is_azimuth_filter = declare_parameter<bool>("node_params.is_azimuth_filter", false);
+  node_param_.azimuth_min = declare_parameter<double>("node_params.azimuth_min", 0.0);
+  node_param_.azimuth_max = declare_parameter<double>("node_params.azimuth_max", 0.0);
 
   // Subscriber
   sub_radar_ = create_subscription<RadarScan>(
@@ -95,6 +104,15 @@ rcl_interfaces::msg::SetParametersResult RadarThresholdFilterNode::onSetParam(
     {
       auto & p = node_param_;
       update_param(params, "node_params.update_rate_hz", p.update_rate_hz);
+      update_param(params, "node_params.is_amplitude_filter", p.is_amplitude_filter);
+      update_param(params, "node_params.amplitude_min", p.amplitude_min);
+      update_param(params, "node_params.amplitude_max", p.amplitude_max);
+      update_param(params, "node_params.is_range_filter", p.is_range_filter);
+      update_param(params, "node_params.range_min", p.range_min);
+      update_param(params, "node_params.range_max", p.range_max);
+      update_param(params, "node_params.is_azimuth_filter", p.is_azimuth_filter);
+      update_param(params, "node_params.azimuth_min", p.azimuth_min);
+      update_param(params, "node_params.azimuth_max", p.azimuth_max);
     }
   } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
     result.successful = false;
@@ -135,39 +153,27 @@ void RadarThresholdFilterNode::onTimer()
 
 bool RadarThresholdFilterNode::isWithinThreshold(const RadarReturn & radar_return)
 {
-  if (node_param_.is_amplitude_filter) {
-    if (radar_return.amplitude < node_param_.amplitude_min) {
-      return false;
-    }
-    if (node_param_.amplitude_max < radar_return.amplitude) {
-      return false;
-    }
+  if (
+    node_param_.is_amplitude_filter &&
+    !isWithin(radar_return.amplitude, node_param_.amplitude_max, node_param_.amplitude_min)) {
+    return false;
   }
 
-  if (node_param_.is_range_filter) {
-    if (radar_return.range < node_param_.range_min) {
-      return false;
-    }
-    if (node_param_.range_max < radar_return.range) {
-      return false;
-    }
+  if (
+    node_param_.is_range_filter &&
+    !isWithin(radar_return.range, node_param_.range_max, node_param_.range_min)) {
+    return false;
   }
 
-  if (node_param_.is_angle_azimuth_filter) {
-    if (radar_return.azimuth < node_param_.angle_azimuth_min) {
-      return false;
-    }
-    if (node_param_.angle_azimuth_max < radar_return.azimuth) {
-      return false;
-    }
+  if (
+    node_param_.is_azimuth_filter &&
+    !isWithin(radar_return.azimuth, node_param_.azimuth_max, node_param_.azimuth_min)) {
+    return false;
   }
 
   if (node_param_.is_z_filter) {
     const auto z = radar_return.range * std::sin(radar_return.elevation);
-    if (z < node_param_.z_min) {
-      return false;
-    }
-    if (node_param_.z_max < z) {
+    if (!isWithin(z, node_param_.z_max, node_param_.z_min)) {
       return false;
     }
   }

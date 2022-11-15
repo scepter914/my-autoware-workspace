@@ -43,9 +43,9 @@ public:
     bool is_range_filter{};
     double range_min{};
     double range_max{};
-    bool is_angle_azimuth_filter{};
-    double angle_azimuth_min{};
-    double angle_azimuth_max{};
+    bool is_azimuth_filter{};
+    double azimuth_min{};
+    double azimuth_max{};
     bool is_z_filter{};
     double z_min{};
     double z_max{};
