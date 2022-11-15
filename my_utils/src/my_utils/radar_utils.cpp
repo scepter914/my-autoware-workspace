@@ -24,9 +24,9 @@ namespace
 
 geometry_msgs::msg::Point getPoint(const radar_msgs::msg::RadarReturn & radar)
 {
-  const auto x = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
-  const auto y = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
-  const auto z = radar.range * std::sin(radar.elevation);
+  const float x = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
+  const float y = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
+  const float z = radar.range * std::sin(radar.elevation);
   return geometry_msgs::build<geometry_msgs::msg::Point>().x(x).y(y).z(z);
 }
 
@@ -71,8 +71,8 @@ geometry_msgs::msg::Vector3 compensateEgoVehicleTwist(
 
 pcl::PointXYZI getPointXYZI(const radar_msgs::msg::RadarReturn & radar)
 {
-  const float x = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
-  const float y = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
+  const float x = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
+  const float y = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
   const float z = radar.range * std::sin(radar.elevation);
   return pcl::PointXYZI{x, y, z, radar.amplitude};
 }

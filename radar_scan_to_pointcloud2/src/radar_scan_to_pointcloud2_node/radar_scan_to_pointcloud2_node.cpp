@@ -34,20 +34,18 @@ bool update_param(
   const auto itr = std::find_if(
     params.cbegin(), params.cend(),
     [&name](const rclcpp::Parameter & p) { return p.get_name() == name; });
-
   // Not found
   if (itr == params.cend()) {
     return false;
   }
-
   value = itr->template get_value<T>();
   return true;
 }
 
 pcl::PointXYZI getPointXYZI(const radar_msgs::msg::RadarReturn & radar)
 {
-  const float x = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
-  const float y = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
+  const float x = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
+  const float y = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
   const float z = radar.range * std::sin(radar.elevation);
   return pcl::PointXYZI{x, y, z, radar.amplitude};
 }
