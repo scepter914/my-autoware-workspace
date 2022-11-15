@@ -39,6 +39,7 @@ public:
   struct NodeParam
   {
     double update_rate_hz{};
+    std::string intensity_value_mode{};
   };
 
 private:

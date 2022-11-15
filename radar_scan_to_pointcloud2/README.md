@@ -18,9 +18,10 @@
 
 ## Parameters
 
-| Name         | Type   | Description |
-| ------------ | ------ | ----------- |
-| update\_rate | double | node Hz     |
+| Name                 | Type        | Description                                                                                                        |
+| -------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------ |
+| update\_rate         | double      | node Hz                                                                                                            |
+| intensity_value_mode | std::string | The output's intensity value of pointcloud. Select from "amplitude" or "doppler_velocity". Default is "amplitude". |
 
 ## How to launch
 

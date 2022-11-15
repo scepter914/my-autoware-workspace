@@ -42,19 +42,19 @@ bool update_param(
   return true;
 }
 
-pcl::PointXYZI getPointXYZI(const radar_msgs::msg::RadarReturn & radar)
+pcl::PointXYZI getPointXYZI(const radar_msgs::msg::RadarReturn & radar, float intensity)
 {
   const float x = radar.range * std::cos(radar.azimuth) * std::cos(radar.elevation);
   const float y = radar.range * std::sin(radar.azimuth) * std::cos(radar.elevation);
   const float z = radar.range * std::sin(radar.elevation);
-  return pcl::PointXYZI{x, y, z, radar.amplitude};
+  return pcl::PointXYZI{x, y, z, intensity};
 }
 
 pcl::PointCloud<pcl::PointXYZI> toAmplitudePCL(const radar_msgs::msg::RadarScan & radar_scan)
 {
   pcl::PointCloud<pcl::PointXYZI> pcl;
   for (const auto & radar : radar_scan.returns) {
-    pcl.push_back(getPointXYZI(radar));
+    pcl.push_back(getPointXYZI(radar, radar.amplitude));
   }
   return pcl;
 }
@@ -63,6 +63,24 @@ sensor_msgs::msg::PointCloud2 toAmplitudePointcloud2(const radar_msgs::msg::Rada
 {
   sensor_msgs::msg::PointCloud2 pointcloud_msg;
   auto pcl_pointcloud = toAmplitudePCL(radar_scan);
+  pcl::toROSMsg(pcl_pointcloud, pointcloud_msg);
+  pointcloud_msg.header = radar_scan.header;
+  return pointcloud_msg;
+}
+
+pcl::PointCloud<pcl::PointXYZI> toDopplerPCL(const radar_msgs::msg::RadarScan & radar_scan)
+{
+  pcl::PointCloud<pcl::PointXYZI> pcl;
+  for (const auto & radar : radar_scan.returns) {
+    pcl.push_back(getPointXYZI(radar, radar.doppler_velocity));
+  }
+  return pcl;
+}
+
+sensor_msgs::msg::PointCloud2 toDopplerPointcloud2(const radar_msgs::msg::RadarScan & radar_scan)
+{
+  sensor_msgs::msg::PointCloud2 pointcloud_msg;
+  auto pcl_pointcloud = toDopplerPCL(radar_scan);
   pcl::toROSMsg(pcl_pointcloud, pointcloud_msg);
   pointcloud_msg.header = radar_scan.header;
   return pointcloud_msg;
@@ -83,7 +101,9 @@ RadarScanToPointcloud2Node::RadarScanToPointcloud2Node(const rclcpp::NodeOptions
     std::bind(&RadarScanToPointcloud2Node::onSetParam, this, _1));
 
   // Node Parameter
-  node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
+  node_param_.update_rate_hz = declare_parameter<double>("update_rate_hz", 10.0);
+  node_param_.intensity_value_mode =
+    declare_parameter<std::string>("intensity_value_mode", "amplitude");
 
   // Subscriber
   sub_radar_ = create_subscription<RadarScan>(
@@ -107,7 +127,8 @@ rcl_interfaces::msg::SetParametersResult RadarScanToPointcloud2Node::onSetParam(
 
   try {
     auto & p = node_param_;
-    update_param(params, "node_params.update_rate_hz", p.update_rate_hz);
+    update_param(params, "update_rate_hz", p.update_rate_hz);
+    update_param(params, "intensity_value_mode", p.intensity_value_mode);
   } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
     result.successful = false;
     result.reason = e.what();
@@ -132,7 +153,14 @@ void RadarScanToPointcloud2Node::onTimer()
   if (!isDataReady()) {
     return;
   }
-  sensor_msgs::msg::PointCloud2 output = toAmplitudePointcloud2(*radar_data_);
+  sensor_msgs::msg::PointCloud2 output;
+  if (node_param_.intensity_value_mode == "amplitude") {
+    output = toAmplitudePointcloud2(*radar_data_);
+  } else if (node_param_.intensity_value_mode == "doppler_velocity") {
+    output = toDopplerPointcloud2(*radar_data_);
+  } else {
+    RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 1000, "Error intensity value mode...");
+  }
   pub_pointcloud_->publish(output);
 }
 
