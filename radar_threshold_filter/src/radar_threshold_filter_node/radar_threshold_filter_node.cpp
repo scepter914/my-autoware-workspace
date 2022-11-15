@@ -47,7 +47,7 @@ bool update_param(
 
 bool isWithin(double value, double max, double min)
 {
-  if (min < value || value < max) {
+  if (min < value && value < max) {
     return true;
   } else {
     return false;
