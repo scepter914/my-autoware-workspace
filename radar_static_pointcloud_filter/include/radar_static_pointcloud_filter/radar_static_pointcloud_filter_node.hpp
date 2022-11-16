@@ -22,6 +22,11 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <radar_msgs/msg/radar_scan.hpp>
 
+#include <pcl/pcl_base.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+
 #include <chrono>
 #include <memory>
 #include <string>
@@ -41,15 +46,17 @@ public:
   struct NodeParam
   {
     double update_rate_hz{};
+    double min_sd{};
+    double magnification_sd{};
   };
 
 private:
   // Subscriber
-  rclcpp::Subscription<RadarReturn>::SharedPtr sub_radar_{};
+  rclcpp::Subscription<RadarScan>::SharedPtr sub_radar_{};
   rclcpp::Subscription<Odometry>::SharedPtr sub_odometry_{};
 
   // Callback
-  void onRadar(const RadarReturn::ConstSharedPtr msg);
+  void onRadar(const RadarScan::ConstSharedPtr msg);
   void onOdometory(const Odometry::ConstSharedPtr msg);
 
   // Data Buffer
@@ -57,8 +64,8 @@ private:
   Odometory::ConstSharedPtr odometry_data_{};
 
   // Publisher
-  rclcpp::Publisher<RadarReturn>::SharedPtr pub_static_radar_{};
-  rclcpp::Publisher<RadarReturn>::SharedPtr pub_dynamic_radar_{};
+  rclcpp::Publisher<RadarScan>::SharedPtr pub_static_radar_{};
+  rclcpp::Publisher<RadarScan>::SharedPtr pub_dynamic_radar_{};
 
   // Timer
   rclcpp::TimerBase::SharedPtr timer_{};

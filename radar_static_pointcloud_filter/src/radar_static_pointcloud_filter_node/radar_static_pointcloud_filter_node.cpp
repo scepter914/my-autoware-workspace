@@ -57,21 +57,21 @@ RadarStaticPointcloudFilterNode::RadarStaticPointcloudFilterNode(
     std::bind(&RadarStaticPointcloudFilterNode::onSetParam, this, _1));
 
   // Node Parameter
-  node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
-
-  // Core Parameter
-  core_param_.data = declare_parameter<int>("core_params.data");
-
-  // Core
-  radar_static_pointcloud_filter_ = std::make_unique<RadarStaticPointcloudFilter>(get_logger());
-  radar_static_pointcloud_filter_->setParam(core_param_);
+  node_param_.update_rate_hz = declare_parameter<double>("update_rate_hz", 10.0);
+  node_param_.min_sd = declare_parameter<double>("min_sd", 1.0);
+  node_param_.magnification_sd = declare_parameter<double>("magnification_sd", 1.0);
 
   // Subscriber
-  sub_data_ = create_subscription<Int32>(
-    "~/input/data", rclcpp::QoS{1}, std::bind(&RadarStaticPointcloudFilterNode::onData, this, _1));
+  sub_radar_ = create_subscription<RadarScan>(
+    "~/input/radar", rclcpp::QoS{1},
+    std::bind(&RadarStaticPointcloudFilterNode::onRadar, this, _1));
+  sub_odometry_ = create_subscription<Odometry>(
+    "~/input/odometry", rclcpp::QoS{1},
+    std::bind(&RadarStaticPointcloudFilterNode::onOdometry, this, _1));
 
   // Publisher
-  pub_data_ = create_publisher<Int32>("~/output/data", 1);
+  pub_static_radar_ = create_publisher<RadarScan>("~/output/static_radar_scan", 1);
+  pub_dynamic_radar_ = create_publisher<RadarScan>("~/output/dynamic_radar_scan", 1);
 
   // Timer
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
@@ -97,6 +97,8 @@ rcl_interfaces::msg::SetParametersResult RadarStaticPointcloudFilterNode::onSetP
   try {
     auto & p = node_param_;
     update_param(params, "update_rate_hz", p.update_rate_hz);
+    update_param(params, "min_sd", p.min_sd);
+    update_param(params, "magnification_sd", p.magnification_sd);
   } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
     result.successful = false;
     result.reason = e.what();
