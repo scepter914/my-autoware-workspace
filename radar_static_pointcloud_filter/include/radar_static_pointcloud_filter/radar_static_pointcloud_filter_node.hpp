@@ -17,8 +17,10 @@
 
 #include "radar_static_pointcloud_filter/radar_static_pointcloud_filter.hpp"
 
-#include <example_interfaces/msg/int32.hpp>
 #include <rclcpp/rclcpp.hpp>
+
+#include <nav_msgs/msg/odometry.hpp>
+#include <radar_msgs/msg/radar_scan.hpp>
 
 #include <chrono>
 #include <memory>
@@ -27,7 +29,9 @@
 
 namespace radar_static_pointcloud_filter
 {
-using example_interfaces::msg::Int32;
+using nav_msgs::msg::Odometry;
+using radar_msgs::msg::RadarReturn;
+using radar_msgs::msg::RadarScan;
 
 class RadarStaticPointcloudFilterNode : public rclcpp::Node
 {
@@ -41,16 +45,20 @@ public:
 
 private:
   // Subscriber
-  rclcpp::Subscription<Int32>::SharedPtr sub_data_{};
+  rclcpp::Subscription<RadarReturn>::SharedPtr sub_radar_{};
+  rclcpp::Subscription<Odometry>::SharedPtr sub_odometry_{};
 
   // Callback
-  void onData(const Int32::ConstSharedPtr msg);
+  void onRadar(const RadarReturn::ConstSharedPtr msg);
+  void onOdometory(const Odometry::ConstSharedPtr msg);
 
   // Data Buffer
-  Int32::ConstSharedPtr data_{};
+  RadarReturn::ConstSharedPtr radar_data_{};
+  Odometory::ConstSharedPtr odometry_data_{};
 
   // Publisher
-  rclcpp::Publisher<Int32>::SharedPtr pub_data_{};
+  rclcpp::Publisher<RadarReturn>::SharedPtr pub_static_radar_{};
+  rclcpp::Publisher<RadarReturn>::SharedPtr pub_dynamic_radar_{};
 
   // Timer
   rclcpp::TimerBase::SharedPtr timer_{};
@@ -65,12 +73,6 @@ private:
 
   // Parameter
   NodeParam node_param_{};
-
-  // Core
-  RadarStaticPointcloudFilter::Input input_{};
-  RadarStaticPointcloudFilter::Output output_{};
-  RadarStaticPointcloudFilter::Param core_param_{};
-  std::unique_ptr<RadarStaticPointcloudFilter> radar_static_pointcloud_filter_{};
 };
 
 }  // namespace radar_static_pointcloud_filter

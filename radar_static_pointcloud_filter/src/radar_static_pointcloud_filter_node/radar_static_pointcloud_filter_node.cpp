@@ -33,12 +33,10 @@ bool update_param(
   const auto itr = std::find_if(
     params.cbegin(), params.cend(),
     [&name](const rclcpp::Parameter & p) { return p.get_name() == name; });
-
   // Not found
   if (itr == params.cend()) {
     return false;
   }
-
   value = itr->template get_value<T>();
   return true;
 }
@@ -46,12 +44,17 @@ bool update_param(
 
 namespace radar_static_pointcloud_filter
 {
-RadarStaticPointcloudFilterNode::RadarStaticPointcloudFilterNode(const rclcpp::NodeOptions & node_options)
+using nav_msgs::msg::Odometry;
+using radar_msgs::msg::RadarReturn;
+using radar_msgs::msg::RadarScan;
+
+RadarStaticPointcloudFilterNode::RadarStaticPointcloudFilterNode(
+  const rclcpp::NodeOptions & node_options)
 : Node("radar_static_pointcloud_filter", node_options)
 {
   // Parameter Server
-  set_param_res_ =
-    this->add_on_set_parameters_callback(std::bind(&RadarStaticPointcloudFilterNode::onSetParam, this, _1));
+  set_param_res_ = this->add_on_set_parameters_callback(
+    std::bind(&RadarStaticPointcloudFilterNode::onSetParam, this, _1));
 
   // Node Parameter
   node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
@@ -73,43 +76,32 @@ RadarStaticPointcloudFilterNode::RadarStaticPointcloudFilterNode(const rclcpp::N
   // Timer
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
   timer_ = rclcpp::create_timer(
-    this, get_clock(), update_period_ns, std::bind(&RadarStaticPointcloudFilterNode::onTimer, this));
+    this, get_clock(), update_period_ns,
+    std::bind(&RadarStaticPointcloudFilterNode::onTimer, this));
 }
 
-void RadarStaticPointcloudFilterNode::onData(const Int32::ConstSharedPtr msg) { data_ = msg; }
+void RadarStaticPointcloudFilterNode::onRadar(const RadarReturn::ConstSharedPtr msg)
+{
+  radar_data_ = msg;
+}
+
+void RadarStaticPointcloudFilterNode::onOdometory(const RadarReturn::ConstSharedPtr msg)
+{
+  odometry_data_ = msg;
+}
 
 rcl_interfaces::msg::SetParametersResult RadarStaticPointcloudFilterNode::onSetParam(
   const std::vector<rclcpp::Parameter> & params)
 {
   rcl_interfaces::msg::SetParametersResult result;
-
   try {
-    // Node Parameter
-    {
-      auto & p = node_param_;
-
-      // Update params
-      update_param(params, "node_params.update_rate_hz", p.update_rate_hz);
-    }
-
-    // Core Parameter
-    {
-      auto & p = core_param_;
-
-      // Update params
-      update_param(params, "core_params.data", p.data);
-
-      // Set parameter to instance
-      if (radar_static_pointcloud_filter_) {
-        radar_static_pointcloud_filter_->setParam(core_param_);
-      }
-    }
+    auto & p = node_param_;
+    update_param(params, "update_rate_hz", p.update_rate_hz);
   } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
     result.successful = false;
     result.reason = e.what();
     return result;
   }
-
   result.successful = true;
   result.reason = "success";
   return result;
@@ -117,11 +109,14 @@ rcl_interfaces::msg::SetParametersResult RadarStaticPointcloudFilterNode::onSetP
 
 bool RadarStaticPointcloudFilterNode::isDataReady()
 {
-  if (!data_) {
-    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for data msg...");
+  if (!radar_data_) {
+    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for radar msg...");
     return false;
   }
-
+  if (!odometry_data_) {
+    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for odometry msg...");
+    return false;
+  }
   return true;
 }
 
@@ -130,20 +125,7 @@ void RadarStaticPointcloudFilterNode::onTimer()
   if (!isDataReady()) {
     return;
   }
-
-  // Set input data
-  RadarStaticPointcloudFilter::Input input;
-
-  input.data = data_->data;
-
-  // Update
-  output_ = radar_static_pointcloud_filter_->update(input);
-
-  // Sample
-  pub_data_->publish(example_interfaces::build<Int32>().data(output_.data));
   // pub_data->publish(hoge_msgs);
-
-  RCLCPP_INFO(get_logger(), "input, output: %d, %d", input_.data, output_.data);
 }
 
 }  // namespace radar_static_pointcloud_filter
