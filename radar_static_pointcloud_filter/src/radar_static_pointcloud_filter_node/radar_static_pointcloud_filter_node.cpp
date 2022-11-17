@@ -40,6 +40,7 @@ bool update_param(
   value = itr->template get_value<T>();
   return true;
 }
+
 }  // namespace
 
 namespace radar_static_pointcloud_filter
@@ -127,7 +128,36 @@ void RadarStaticPointcloudFilterNode::onTimer()
   if (!isDataReady()) {
     return;
   }
-  // pub_data->publish(hoge_msgs);
+
+  RadarScan static_radar_{};
+  RadarScan dynamic_radar_{};
+  static_radar_.header = radar_data_->header;
+  dynamic_radar_.header = radar_data_->header;
+
+  // filter
+  for (const auto & pc : input_radar->radar_pointclouds) {
+    output_radar.radar_pointclouds.push_back(pc);
+    output_radar.radar_pointclouds.push_back(pc);
+  }
+
+  pub_static_radar->publish(static_radar_);
+  pub_dynamic_radar->publish(dynamic_radar_);
+}
+
+bool RadarStaticPointcloudFilterNode::isStaticPointcloud(const RadarReturn & radar_return)
+{
+  double sd = std::max(static_cast<double>(pointcloud.sigma_doppler), node_param_.min_sd);
+  double velocity = pointcloud.twist_covariance.twist.linear.x;
+
+  return (
+    (-node_param_.magnification_sd * sd < velocity) &&
+    (velocity < node_param_.magnification_sd * sd));
+
+  // if ego_v - magnification_sd * sd < doppler_velocity < ego_v + magnification_sd * sd
+  // then return true (This means static point)
+  //  return (
+  //    (ego_vel_doppler - node_param_.magnification_sd * sd < pointcloud.doppler_velocity) &&
+  //    (pointcloud.doppler_velocity < ego_vel_doppler + node_param_.magnification_sd * sd));
 }
 
 }  // namespace radar_static_pointcloud_filter
