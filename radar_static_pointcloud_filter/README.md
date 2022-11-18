@@ -20,10 +20,9 @@ Calculation cost is O(n). `n` is the number of radar pointcloud.
 
 ### Parameters
 
-| Name              | Type   | Description                                                                                                           |
-| ----------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
-| min\_sd           | double | Minimum standard deviation for radar doppler velocity. [m/s] If radar topic do not have doppler\_sigma, apply min\_sd |
-| magnification\_sd | double | Magnification for standard deviation of radar doppler velocity.                                                       |
+| Name                | Type   | Description                                          |
+| ------------------- | ------ | ---------------------------------------------------- |
+| doppler_velocity_sd | double | Standard deviation for radar doppler velocity. [m/s] |
 
 ### How to launch
 

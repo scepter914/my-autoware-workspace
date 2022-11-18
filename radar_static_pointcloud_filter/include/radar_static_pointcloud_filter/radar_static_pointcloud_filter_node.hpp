@@ -45,8 +45,7 @@ public:
 
   struct NodeParam
   {
-    double min_sd{};
-    double magnification_sd{};
+    double doppler_velocity_sd{};
   };
 
 private:
@@ -60,7 +59,6 @@ private:
 
   // Callback
   void onData(const RadarScan::ConstSharedPtr radar_msg, const Odometry::ConstSharedPtr odom_msg);
-  bool isDataReady();
 
   // Data Buffer
   RadarReturn::ConstSharedPtr radar_data_{};
