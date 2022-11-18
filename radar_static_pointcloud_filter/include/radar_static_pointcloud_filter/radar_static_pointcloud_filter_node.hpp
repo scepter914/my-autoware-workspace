@@ -45,7 +45,6 @@ public:
 
   struct NodeParam
   {
-    double update_rate_hz{};
     double min_sd{};
     double magnification_sd{};
   };
@@ -55,9 +54,13 @@ private:
   rclcpp::Subscription<RadarScan>::SharedPtr sub_radar_{};
   rclcpp::Subscription<Odometry>::SharedPtr sub_odometry_{};
 
+  using SyncPolicy = message_filters::sync_policies::ApproximateTime<RadarScan, Odometry>;
+  using Sync = message_filters::Synchronizer<SyncPolicy>;
+  typename std::shared_ptr<Sync> sync_ptr_;
+
   // Callback
-  void onRadar(const RadarScan::ConstSharedPtr msg);
-  void onOdometory(const Odometry::ConstSharedPtr msg);
+  void onData(const RadarScan::ConstSharedPtr radar_msg, const Odometry::ConstSharedPtr odom_msg);
+  bool isDataReady();
 
   // Data Buffer
   RadarReturn::ConstSharedPtr radar_data_{};
@@ -66,12 +69,6 @@ private:
   // Publisher
   rclcpp::Publisher<RadarScan>::SharedPtr pub_static_radar_{};
   rclcpp::Publisher<RadarScan>::SharedPtr pub_dynamic_radar_{};
-
-  // Timer
-  rclcpp::TimerBase::SharedPtr timer_{};
-
-  bool isDataReady();
-  void onTimer();
 
   // Parameter Server
   OnSetParametersCallbackHandle::SharedPtr set_param_res_;

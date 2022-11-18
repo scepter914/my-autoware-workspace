@@ -18,12 +18,6 @@
 #include <string>
 #include <vector>
 
-using namespace std::literals;
-using std::chrono::duration;
-using std::chrono::duration_cast;
-using std::chrono::nanoseconds;
-using std::placeholders::_1;
-
 namespace
 {
 template <class T>
@@ -58,37 +52,21 @@ RadarStaticPointcloudFilterNode::RadarStaticPointcloudFilterNode(
     std::bind(&RadarStaticPointcloudFilterNode::onSetParam, this, _1));
 
   // Node Parameter
-  node_param_.update_rate_hz = declare_parameter<double>("update_rate_hz", 10.0);
   node_param_.min_sd = declare_parameter<double>("min_sd", 1.0);
   node_param_.magnification_sd = declare_parameter<double>("magnification_sd", 1.0);
 
   // Subscriber
-  sub_radar_ = create_subscription<RadarScan>(
-    "~/input/radar", rclcpp::QoS{1},
-    std::bind(&RadarStaticPointcloudFilterNode::onRadar, this, _1));
-  sub_odometry_ = create_subscription<Odometry>(
-    "~/input/odometry", rclcpp::QoS{1},
-    std::bind(&RadarStaticPointcloudFilterNode::onOdometry, this, _1));
+  sub_radar_.subscribe(this, "~/input/radar", rclcpp::QoS{1}.get_rmw_qos_profile());
+  sub_odometry_.subscribe(this, "~/input/odometry", rclcpp::QoS{1}.get_rmw_qos_profile());
+
+  using std::placeholders::_1;
+  using std::placeholders::_2;
+  sync_ptr_ = std::make_shared<Sync>(SyncPolicy(10), sub_radar_, sub_odometry_);
+  sync_ptr_->registerCallback(std::bind(&RadarStaticPointcloudFilterNode::onData, this, _1, _2));
 
   // Publisher
   pub_static_radar_ = create_publisher<RadarScan>("~/output/static_radar_scan", 1);
   pub_dynamic_radar_ = create_publisher<RadarScan>("~/output/dynamic_radar_scan", 1);
-
-  // Timer
-  const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
-  timer_ = rclcpp::create_timer(
-    this, get_clock(), update_period_ns,
-    std::bind(&RadarStaticPointcloudFilterNode::onTimer, this));
-}
-
-void RadarStaticPointcloudFilterNode::onRadar(const RadarReturn::ConstSharedPtr msg)
-{
-  radar_data_ = msg;
-}
-
-void RadarStaticPointcloudFilterNode::onOdometory(const RadarReturn::ConstSharedPtr msg)
-{
-  odometry_data_ = msg;
 }
 
 rcl_interfaces::msg::SetParametersResult RadarStaticPointcloudFilterNode::onSetParam(
@@ -97,7 +75,6 @@ rcl_interfaces::msg::SetParametersResult RadarStaticPointcloudFilterNode::onSetP
   rcl_interfaces::msg::SetParametersResult result;
   try {
     auto & p = node_param_;
-    update_param(params, "update_rate_hz", p.update_rate_hz);
     update_param(params, "min_sd", p.min_sd);
     update_param(params, "magnification_sd", p.magnification_sd);
   } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
@@ -123,8 +100,12 @@ bool RadarStaticPointcloudFilterNode::isDataReady()
   return true;
 }
 
-void RadarStaticPointcloudFilterNode::onTimer()
+void RadarStaticPointcloudFilterNode::onData(
+  const RadarScan::ConstSharedPtr radar_msg, const Odometry::ConstSharedPtr odom_msg)
 {
+  radar_data_ = radar_msg;
+  odometry_data_ = odom_msg;
+
   if (!isDataReady()) {
     return;
   }

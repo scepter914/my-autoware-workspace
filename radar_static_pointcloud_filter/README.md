@@ -22,7 +22,6 @@ Calculation cost is O(n). `n` is the number of radar pointcloud.
 
 | Name              | Type   | Description                                                                                                           |
 | ----------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
-| update\_rate      | double | node Hz                                                                                                               |
 | min\_sd           | double | Minimum standard deviation for radar doppler velocity. [m/s] If radar topic do not have doppler\_sigma, apply min\_sd |
 | magnification\_sd | double | Magnification for standard deviation of radar doppler velocity.                                                       |
 
