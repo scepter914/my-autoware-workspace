@@ -55,12 +55,6 @@ private:
   // Publisher
   rclcpp::Publisher<PointCloud2>::SharedPtr pub_pointcloud_{};
 
-  // Timer
-  rclcpp::TimerBase::SharedPtr timer_{};
-
-  bool isDataReady();
-  void onTimer();
-
   // Parameter Server
   OnSetParametersCallbackHandle::SharedPtr set_param_res_;
   rcl_interfaces::msg::SetParametersResult onSetParam(
@@ -68,6 +62,9 @@ private:
 
   // Parameter
   NodeParam node_param_{};
+
+  // Function
+  bool isDataReady();
 };
 
 }  // namespace radar_scan_to_pointcloud2

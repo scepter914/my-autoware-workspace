@@ -111,14 +111,7 @@ RadarScanToPointcloud2Node::RadarScanToPointcloud2Node(const rclcpp::NodeOptions
 
   // Publisher
   pub_pointcloud_ = create_publisher<PointCloud2>("~/output/pointcloud", 1);
-
-  // Timer
-  const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
-  timer_ = rclcpp::create_timer(
-    this, get_clock(), update_period_ns, std::bind(&RadarScanToPointcloud2Node::onTimer, this));
 }
-
-void RadarScanToPointcloud2Node::onData(const RadarScan::ConstSharedPtr msg) { radar_data_ = msg; }
 
 rcl_interfaces::msg::SetParametersResult RadarScanToPointcloud2Node::onSetParam(
   const std::vector<rclcpp::Parameter> & params)
@@ -148,11 +141,13 @@ bool RadarScanToPointcloud2Node::isDataReady()
   return true;
 }
 
-void RadarScanToPointcloud2Node::onTimer()
+void RadarScanToPointcloud2Node::onData(const RadarScan::ConstSharedPtr msg)
 {
+  radar_data_ = msg;
   if (!isDataReady()) {
     return;
   }
+
   sensor_msgs::msg::PointCloud2 output;
   if (node_param_.intensity_value_mode == "amplitude") {
     output = toAmplitudePointcloud2(*radar_data_);
