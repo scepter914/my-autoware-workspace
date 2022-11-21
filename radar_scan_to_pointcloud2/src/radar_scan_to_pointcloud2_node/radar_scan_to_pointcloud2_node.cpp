@@ -134,9 +134,9 @@ void RadarScanToPointcloud2Node::onData(const RadarScan::ConstSharedPtr radar_ms
 {
   sensor_msgs::msg::PointCloud2 output;
   if (node_param_.intensity_value_mode == "amplitude") {
-    output = toAmplitudePointcloud2(radar_msg);
+    output = toAmplitudePointcloud2(*radar_msg);
   } else if (node_param_.intensity_value_mode == "doppler_velocity") {
-    output = toDopplerPointcloud2(radar_msg);
+    output = toDopplerPointcloud2(*radar_msg);
   } else {
     RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 1000, "Error intensity value mode.");
   }
