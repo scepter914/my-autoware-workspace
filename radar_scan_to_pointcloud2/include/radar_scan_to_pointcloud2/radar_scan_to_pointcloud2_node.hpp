@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RADAR_SCAN_TO_POINTCLOUD2__RADAR_SCAN_TO_POINTCLOUD2_NODE_HPP__
-#define RADAR_SCAN_TO_POINTCLOUD2__RADAR_SCAN_TO_POINTCLOUD2_NODE_HPP__
+#ifndef RADAR_SCAN_TO_POINTCLOUD2__RADAR_SCAN_TO_POINTCLOUD2_NODE_HPP_
+#define RADAR_SCAN_TO_POINTCLOUD2__RADAR_SCAN_TO_POINTCLOUD2_NODE_HPP_
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -38,7 +38,8 @@ public:
 
   struct NodeParam
   {
-    std::string intensity_value_mode{};
+    bool publish_amplitude_pointcloud{};
+    bool publish_doppler_pointcloud{};
   };
 
 private:
@@ -49,12 +50,17 @@ private:
   void onData(const RadarScan::ConstSharedPtr radar_msg);
 
   // Publisher
-  rclcpp::Publisher<PointCloud2>::SharedPtr pub_pointcloud_{};
+  rclcpp::Publisher<PointCloud2>::SharedPtr pub_amplitude_pointcloud_{};
+  rclcpp::Publisher<PointCloud2>::SharedPtr pub_doppler_pointcloud_{};
 
   // Parameter Server
   OnSetParametersCallbackHandle::SharedPtr set_param_res_;
   rcl_interfaces::msg::SetParametersResult onSetParam(
     const std::vector<rclcpp::Parameter> & params);
+
+  // Data buffer
+  sensor_msgs::msg::PointCloud2 amplitude_pointcloud;
+  sensor_msgs::msg::PointCloud2 doppler_pointcloud;
 
   // Parameter
   NodeParam node_param_{};
@@ -62,4 +68,4 @@ private:
 
 }  // namespace radar_scan_to_pointcloud2
 
-#endif  // RADAR_SCAN_TO_POINTCLOUD2__RADAR_SCAN_TO_POINTCLOUD2_NODE_HPP__
+#endif  // RADAR_SCAN_TO_POINTCLOUD2__RADAR_SCAN_TO_POINTCLOUD2_NODE_HPP_

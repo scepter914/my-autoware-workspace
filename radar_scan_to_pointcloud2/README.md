@@ -1,4 +1,5 @@
 # radar_scan_to_pointcloud2
+
 ## radar_scan_to_pointcloud2_node
 
 - Convert from `radar_msgs::msg::RadarScan` to `sensor_msgs::msg::PointCloud2`
@@ -13,15 +14,17 @@
 
 ### Output topics
 
-| Name         | Type                          | Description                  |
-| ------------ | ----------------------------- | ---------------------------- |
-| output/radar | sensor_msgs::msg::PointCloud2 | PointCloud2 radar pointcloud |
+| Name                        | Type                          | Description                                                       |
+| --------------------------- | ----------------------------- | ----------------------------------------------------------------- |
+| output/amplitude_pointcloud | sensor_msgs::msg::PointCloud2 | PointCloud2 radar pointcloud whose intensity is amplitude.        |
+| output/doppler_pointcloud   | sensor_msgs::msg::PointCloud2 | PointCloud2 radar pointcloud whose intensity is doppler velocity. |
 
 ### Parameters
 
-| Name                 | Type        | Description                                                                                                        |
-| -------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------ |
-| intensity_value_mode | std::string | The output's intensity value of pointcloud. Select from "amplitude" or "doppler_velocity". Default is "amplitude". |
+| Name                         | Type | Description                                                                               |
+| ---------------------------- | ---- | ----------------------------------------------------------------------------------------- |
+| publish_amplitude_pointcloud | bool | Whether publish radar pointcloud whose intensity is amplitude. Default is "true".         |
+| publish_doppler_pointcloud   | bool | Whether publish radar pointcloud whose intensity is doppler velocity. Default is "false". |
 
 ### How to launch
 
