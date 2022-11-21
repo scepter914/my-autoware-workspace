@@ -101,7 +101,6 @@ RadarScanToPointcloud2Node::RadarScanToPointcloud2Node(const rclcpp::NodeOptions
     std::bind(&RadarScanToPointcloud2Node::onSetParam, this, _1));
 
   // Node Parameter
-  node_param_.update_rate_hz = declare_parameter<double>("update_rate_hz", 10.0);
   node_param_.intensity_value_mode =
     declare_parameter<std::string>("intensity_value_mode", "amplitude");
 
@@ -120,7 +119,6 @@ rcl_interfaces::msg::SetParametersResult RadarScanToPointcloud2Node::onSetParam(
 
   try {
     auto & p = node_param_;
-    update_param(params, "update_rate_hz", p.update_rate_hz);
     update_param(params, "intensity_value_mode", p.intensity_value_mode);
   } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
     result.successful = false;
@@ -132,29 +130,15 @@ rcl_interfaces::msg::SetParametersResult RadarScanToPointcloud2Node::onSetParam(
   return result;
 }
 
-bool RadarScanToPointcloud2Node::isDataReady()
+void RadarScanToPointcloud2Node::onData(const RadarScan::ConstSharedPtr radar_msg)
 {
-  if (!radar_data_) {
-    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for radar msg...");
-    return false;
-  }
-  return true;
-}
-
-void RadarScanToPointcloud2Node::onData(const RadarScan::ConstSharedPtr msg)
-{
-  radar_data_ = msg;
-  if (!isDataReady()) {
-    return;
-  }
-
   sensor_msgs::msg::PointCloud2 output;
   if (node_param_.intensity_value_mode == "amplitude") {
-    output = toAmplitudePointcloud2(*radar_data_);
+    output = toAmplitudePointcloud2(radar_msg);
   } else if (node_param_.intensity_value_mode == "doppler_velocity") {
-    output = toDopplerPointcloud2(*radar_data_);
+    output = toDopplerPointcloud2(radar_msg);
   } else {
-    RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 1000, "Error intensity value mode...");
+    RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 1000, "Error intensity value mode.");
   }
   pub_pointcloud_->publish(output);
 }

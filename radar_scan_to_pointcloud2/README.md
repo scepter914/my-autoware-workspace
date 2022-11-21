@@ -13,15 +13,14 @@
 
 ### Output topics
 
-| Name         | Type                          | Description            |
-| ------------ | ----------------------------- | ---------------------- |
-| output/radar | sensor_msgs::msg::PointCloud2 | PointCloud2 radar scan |
+| Name         | Type                          | Description                  |
+| ------------ | ----------------------------- | ---------------------------- |
+| output/radar | sensor_msgs::msg::PointCloud2 | PointCloud2 radar pointcloud |
 
 ### Parameters
 
 | Name                 | Type        | Description                                                                                                        |
 | -------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------ |
-| update\_rate         | double      | node Hz                                                                                                            |
 | intensity_value_mode | std::string | The output's intensity value of pointcloud. Select from "amplitude" or "doppler_velocity". Default is "amplitude". |
 
 ### How to launch

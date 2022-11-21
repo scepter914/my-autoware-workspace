@@ -38,7 +38,6 @@ public:
 
   struct NodeParam
   {
-    double update_rate_hz{};
     std::string intensity_value_mode{};
   };
 
@@ -47,10 +46,7 @@ private:
   rclcpp::Subscription<RadarScan>::SharedPtr sub_radar_{};
 
   // Callback
-  void onData(const RadarScan::ConstSharedPtr msg);
-
-  // Data Buffer
-  RadarScan::ConstSharedPtr radar_data_{};
+  void onData(const RadarScan::ConstSharedPtr radar_msg);
 
   // Publisher
   rclcpp::Publisher<PointCloud2>::SharedPtr pub_pointcloud_{};
@@ -62,9 +58,6 @@ private:
 
   // Parameter
   NodeParam node_param_{};
-
-  // Function
-  bool isDataReady();
 };
 
 }  // namespace radar_scan_to_pointcloud2
