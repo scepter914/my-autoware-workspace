@@ -38,6 +38,13 @@ bool update_param(
   return true;
 }
 
+geometry_msgs::msg::Vector3 getVelocity(const radar_msgs::msg::RadarReturn & radar)
+{
+  const auto vx = radar.doppler_velocity * std::sin(radar.azimuth) * std::cos(radar.elevation);
+  const auto vz = radar.doppler_velocity * std::sin(radar.elevation);
+  return geometry_msgs::build<geometry_msgs::msg::Vector3>().x(vx).y(0.0).z(vz);
+}
+
 geometry_msgs::msg::Vector3 compensateEgoVehicleTwist(
   const radar_msgs::msg::RadarReturn & radar,
   const geometry_msgs::msg::TwistWithCovariance & ego_vehicle_twist_with_covariance,
@@ -113,7 +120,7 @@ void RadarStaticPointcloudFilterNode::onData(
   const RadarScan::ConstSharedPtr radar_msg, const Odometry::ConstSharedPtr odom_msg)
 {
   transform_ = transform_listener_->getTransform(
-    node_param_.new_frame_id, radar_msg->header.frame_id, radar_msg->header.stamp,
+    radar_msg->header.frame_id, odom_msg->header.frame_id, odom_msg_msg->header.stamp,
     rclcpp::Duration::from_seconds(0.01));
 
   RadarScan static_radar_{};
@@ -129,18 +136,18 @@ void RadarStaticPointcloudFilterNode::onData(
     }
   }
 
-  pub_static_radar->publish(static_radar_);
-  pub_dynamic_radar->publish(dynamic_radar_);
+  pub_static_radar_->publish(static_radar_);
+  pub_dynamic_radar_->publish(dynamic_radar_);
 }
 
 bool RadarStaticPointcloudFilterNode::isStaticPointcloud(
   const RadarReturn & radar_return, const Odometry::ConstSharedPtr & odom_msg,
-  const geometry_msgs::msg::TransformStamped & transform)
+  geometry_msgs::msg::TransformStamped::ConstSharedPtr & transform)
 {
   geometry_msgs::msg::Vector3 doppler_ego =
     compensateEgoVehicleTwist(radar_return, odom_msg->twist, transform);
-  return doppler_ego - node_param_.doppler_velocity_sd < radar_return.doppler_velocity &&
-         radar_return.doppler_velocity < doppler_ego + node_param_.doppler_velocity_sd;
+  return doppler_ego.x - node_param_.doppler_velocity_sd < radar_return.doppler_velocity &&
+         radar_return.doppler_velocity < doppler_ego.x + node_param_.doppler_velocity_sd;
 }
 
 }  // namespace radar_static_pointcloud_filter
