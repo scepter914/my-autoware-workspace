@@ -15,7 +15,7 @@
 #ifndef RADAR_STATIC_POINTCLOUD_FILTER__RADAR_STATIC_POINTCLOUD_FILTER_NODE_HPP__
 #define RADAR_STATIC_POINTCLOUD_FILTER__RADAR_STATIC_POINTCLOUD_FILTER_NODE_HPP__
 
-#include "radar_static_pointcloud_filter/radar_static_pointcloud_filter.hpp"
+#include "tier4_autoware_utils/tier4_autoware_utils.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -52,17 +52,17 @@ private:
   // Subscriber
   rclcpp::Subscription<RadarScan>::SharedPtr sub_radar_{};
   rclcpp::Subscription<Odometry>::SharedPtr sub_odometry_{};
+  std::shared_ptr<tier4_autoware_utils::TransformListener> transform_listener_;
 
   using SyncPolicy = message_filters::sync_policies::ApproximateTime<RadarScan, Odometry>;
   using Sync = message_filters::Synchronizer<SyncPolicy>;
   typename std::shared_ptr<Sync> sync_ptr_;
 
+  // Data buffer
+  geometry_msgs::msg::TransformStamped::ConstSharedPtr transform_;
+
   // Callback
   void onData(const RadarScan::ConstSharedPtr radar_msg, const Odometry::ConstSharedPtr odom_msg);
-
-  // Data Buffer
-  RadarReturn::ConstSharedPtr radar_data_{};
-  Odometory::ConstSharedPtr odometry_data_{};
 
   // Publisher
   rclcpp::Publisher<RadarScan>::SharedPtr pub_static_radar_{};
@@ -75,7 +75,12 @@ private:
 
   // Parameter
   NodeParam node_param_{};
-};
+
+  // Function
+
+  bool isStaticPointcloud(
+    const RadarReturn & radar_return, const Odometry::ConstSharedPtr & odom_msg,
+    const geometry_msgs::msg::TransformStamped & transform);
 
 }  // namespace radar_static_pointcloud_filter
 

@@ -14,6 +14,9 @@
 
 #include "radar_static_pointcloud_filter/radar_static_pointcloud_filter_node.hpp"
 
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <geometry_msgs/msg/twist_with_covariance.hpp>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -35,6 +38,25 @@ bool update_param(
   return true;
 }
 
+geometry_msgs::msg::Vector3 compensateEgoVehicleTwist(
+  const radar_msgs::msg::RadarReturn & radar,
+  const geometry_msgs::msg::TwistWithCovariance & ego_vehicle_twist_with_covariance,
+  const geometry_msgs::msg::TransformStamped & transform)
+{
+  // transform to sensor coordinate
+  geometry_msgs::msg::Vector3Stamped velocity_stamped{};
+  velocity_stamped.vector = ego_vehicle_twist_with_covariance.twist.linear;
+  geometry_msgs::msg::Vector3Stamped transformed_velocity_stamped{};
+  tf2::doTransform(velocity_stamped, transformed_velocity_stamped, transform);
+
+  // Compensate doppler velocity with ego vehicle twist
+  const auto v_e = ego_vehicle_twist_with_covariance.twist.linear;
+  const auto v_r = getVelocity(radar);
+  return geometry_msgs::build<geometry_msgs::msg::Vector3>()
+    .x(v_r.x - v_e.x)
+    .y(v_r.y - v_e.y)
+    .z(v_r.z - v_e.z);
+}
 }  // namespace
 
 namespace radar_static_pointcloud_filter
@@ -55,6 +77,8 @@ RadarStaticPointcloudFilterNode::RadarStaticPointcloudFilterNode(
   node_param_.doppler_velocity_sd = declare_parameter<double>("doppler_velocity_sd", 2.0);
 
   // Subscriber
+  transform_listener_ = std::make_shared<tier4_autoware_utils::TransformListener>(this);
+
   sub_radar_.subscribe(this, "~/input/radar", rclcpp::QoS{1}.get_rmw_qos_profile());
   sub_odometry_.subscribe(this, "~/input/odometry", rclcpp::QoS{1}.get_rmw_qos_profile());
 
@@ -88,13 +112,17 @@ rcl_interfaces::msg::SetParametersResult RadarStaticPointcloudFilterNode::onSetP
 void RadarStaticPointcloudFilterNode::onData(
   const RadarScan::ConstSharedPtr radar_msg, const Odometry::ConstSharedPtr odom_msg)
 {
+  transform_ = transform_listener_->getTransform(
+    node_param_.new_frame_id, radar_msg->header.frame_id, radar_msg->header.stamp,
+    rclcpp::Duration::from_seconds(0.01));
+
   RadarScan static_radar_{};
   RadarScan dynamic_radar_{};
   static_radar_.header = radar_msg->header;
   dynamic_radar_.header = radar_msg->header;
 
   for (const auto & radar_return : radar_msg->returns) {
-    if (isStaticPointcloud(radar_return)) {
+    if (isStaticPointcloud(radar_return, odom_msg, transform_)) {
       static_radar_.returns.emplace_back(radar_return);
     } else {
       dynamic_radar_.returns.emplace_back(radar_return);
@@ -105,17 +133,14 @@ void RadarStaticPointcloudFilterNode::onData(
   pub_dynamic_radar->publish(dynamic_radar_);
 }
 
-bool RadarStaticPointcloudFilterNode::isStaticPointcloud(const RadarReturn & radar_return)
+bool RadarStaticPointcloudFilterNode::isStaticPointcloud(
+  const RadarReturn & radar_return, const Odometry::ConstSharedPtr & odom_msg,
+  const geometry_msgs::msg::TransformStamped & transform)
 {
-  const auto v = radar_return.doppler_velocity;
-  node_param_.doppler_velocity_sd;
-  return -node_param_.doppler_velocity_sd < v && v < node_param_.doppler_velocity_sd;
-
-  // if ego_v - magnification_sd * sd < doppler_velocity < ego_v + magnification_sd * sd
-  // then return true (This means static point)
-  //  return (
-  //    (ego_vel_doppler - node_param_.magnification_sd * sd < pointcloud.doppler_velocity) &&
-  //    (pointcloud.doppler_velocity < ego_vel_doppler + node_param_.magnification_sd * sd));
+  geometry_msgs::msg::Vector3 doppler_ego =
+    compensateEgoVehicleTwist(radar_return, odom_msg->twist, transform);
+  return doppler_ego - node_param_.doppler_velocity_sd < radar_return.doppler_velocity &&
+         radar_return.doppler_velocity < doppler_ego + node_param_.doppler_velocity_sd;
 }
 
 }  // namespace radar_static_pointcloud_filter
