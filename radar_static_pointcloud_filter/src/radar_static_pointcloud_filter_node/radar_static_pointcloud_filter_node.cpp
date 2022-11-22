@@ -16,6 +16,7 @@
 
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/twist_with_covariance.hpp>
+#include <geometry_msgs/msg/vector3_stamped.hpp>
 
 #include <memory>
 #include <string>
@@ -40,9 +41,21 @@ bool update_param(
 
 geometry_msgs::msg::Vector3 getVelocity(const radar_msgs::msg::RadarReturn & radar)
 {
-  const auto vx = radar.doppler_velocity * std::sin(radar.azimuth) * std::cos(radar.elevation);
-  const auto vz = radar.doppler_velocity * std::sin(radar.elevation);
-  return geometry_msgs::build<geometry_msgs::msg::Vector3>().x(vx).y(0.0).z(vz);
+  return geometry_msgs::build<geometry_msgs::msg::Vector3>()
+    .x(radar.doppler_velocity)
+    .y(0.0)
+    .z(0.0);
+}
+
+geometry_msgs::msg::Vector3 getTransformedVelocity(
+  const geometry_msgs::msg::Vector3 velocity,
+  geometry_msgs::msg::TransformStamped::ConstSharedPtr transform)
+{
+  geometry_msgs::msg::Vector3Stamped velocity_stamped{};
+  velocity_stamped.vector = velocity;
+  geometry_msgs::msg::Vector3Stamped transformed_velocity_stamped{};
+  tf2::doTransform(velocity_stamped, transformed_velocity_stamped, *transform);
+  return velocity_stamped.vector;
 }
 
 geometry_msgs::msg::Vector3 compensateEgoVehicleTwist(
@@ -50,19 +63,14 @@ geometry_msgs::msg::Vector3 compensateEgoVehicleTwist(
   const geometry_msgs::msg::TwistWithCovariance & ego_vehicle_twist_with_covariance,
   geometry_msgs::msg::TransformStamped::ConstSharedPtr transform)
 {
-  // transform to sensor coordinate
-  geometry_msgs::msg::Vector3Stamped velocity_stamped{};
-  velocity_stamped.vector = ego_vehicle_twist_with_covariance.twist.linear;
-  geometry_msgs::msg::Vector3Stamped transformed_velocity_stamped{};
-  tf2::doTransform(velocity_stamped, transformed_velocity_stamped, *transform);
+  const geometry_msgs::msg::Vector3 radar_velocity = getVelocity(radar);
+  const geometry_msgs::msg::Vector3 v_r = getTransformedVelocity(radar_velocity, transform);
 
-  // Compensate doppler velocity with ego vehicle twist
   const auto v_e = ego_vehicle_twist_with_covariance.twist.linear;
-  const auto v_r = getVelocity(radar);
   return geometry_msgs::build<geometry_msgs::msg::Vector3>()
-    .x(v_r.x - v_e.x)
-    .y(v_r.y - v_e.y)
-    .z(v_r.z - v_e.z);
+    .x(v_r.x + v_e.x)
+    .y(v_r.y + v_e.y)
+    .z(v_r.z + v_e.z);
 }
 }  // namespace
 
@@ -121,8 +129,8 @@ void RadarStaticPointcloudFilterNode::onData(
   const RadarScan::ConstSharedPtr radar_msg, const Odometry::ConstSharedPtr odom_msg)
 {
   transform_ = transform_listener_->getTransform(
-    radar_msg->header.frame_id, odom_msg->header.frame_id, odom_msg->header.stamp,
-    rclcpp::Duration::from_seconds(0.01));
+    odom_msg->header.frame_id, radar_msg->header.frame_id, odom_msg->header.stamp,
+    rclcpp::Duration::from_seconds(0.02));
 
   RadarScan static_radar_{};
   RadarScan dynamic_radar_{};
@@ -136,7 +144,6 @@ void RadarStaticPointcloudFilterNode::onData(
       dynamic_radar_.returns.emplace_back(radar_return);
     }
   }
-
   pub_static_radar_->publish(static_radar_);
   pub_dynamic_radar_->publish(dynamic_radar_);
 }
@@ -145,10 +152,11 @@ bool RadarStaticPointcloudFilterNode::isStaticPointcloud(
   const RadarReturn & radar_return, const Odometry::ConstSharedPtr & odom_msg,
   geometry_msgs::msg::TransformStamped::ConstSharedPtr transform)
 {
-  geometry_msgs::msg::Vector3 doppler_ego =
+  geometry_msgs::msg::Vector3 compensated_velocity =
     compensateEgoVehicleTwist(radar_return, odom_msg->twist, transform);
-  return (-doppler_ego.x - node_param_.doppler_velocity_sd < radar_return.doppler_velocity) &&
-         (radar_return.doppler_velocity < -doppler_ego.x + node_param_.doppler_velocity_sd);
+
+  return (-node_param_.doppler_velocity_sd < compensated_velocity.x) &&
+         (compensated_velocity.x < node_param_.doppler_velocity_sd);
 }
 
 }  // namespace radar_static_pointcloud_filter
