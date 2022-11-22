@@ -49,8 +49,8 @@ public:
 
 private:
   // Subscriber
-  rclcpp::Subscription<RadarScan>::SharedPtr sub_radar_{};
-  rclcpp::Subscription<Odometry>::SharedPtr sub_odometry_{};
+  message_filters::Subscriber<RadarScan> sub_radar_{};
+  message_filters::Subscriber<Odometry> sub_odometry_{};
   std::shared_ptr<tier4_autoware_utils::TransformListener> transform_listener_;
 
   using SyncPolicy = message_filters::sync_policies::ApproximateTime<RadarScan, Odometry>;
@@ -79,8 +79,8 @@ private:
 
   bool isStaticPointcloud(
     const RadarReturn & radar_return, const Odometry::ConstSharedPtr & odom_msg,
-    geometry_msgs::msg::TransformStamped::ConstSharedPtr & transform);
-
+    geometry_msgs::msg::TransformStamped::ConstSharedPtr transform);
+};
 }  // namespace radar_static_pointcloud_filter
 
 #endif  // RADAR_STATIC_POINTCLOUD_FILTER__RADAR_STATIC_POINTCLOUD_FILTER_NODE_HPP__
