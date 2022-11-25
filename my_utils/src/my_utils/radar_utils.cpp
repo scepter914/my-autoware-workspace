@@ -40,6 +40,7 @@ pcl::PointXYZI getPointXYZI(const radar_msgs::msg::RadarReturn & radar, float in
   point.intensity = intensity;
   return point;
 }
+
 geometry_msgs::msg::Point getPoint(const radar_msgs::msg::RadarReturn & radar)
 {
   return tier4_autoware_utils::toMsg(getPoint3d(radar));
