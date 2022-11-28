@@ -29,13 +29,16 @@ Eigen::Vector3d getVector3d(const radar_msgs::msg::RadarReturn & radar)
   return Eigen::Vector3d{x, y, z};
 }
 
-tier4_autoware_utils::Point3d getPoint3d(const radar_msgs::msg::RadarReturn & radar)
+pcl::PointXYZI getPointXYZI(const radar_msgs::msg::RadarReturn & radar, float intensity)
+
 {
+  pcl::PointXYZI point;
   const float r_xy = radar.range * std::cos(radar.elevation);
-  const float x = r_xy * std::cos(radar.azimuth);
-  const float y = r_xy * std::sin(radar.azimuth);
-  const float z = radar.range * std::sin(radar.elevation);
-  return tier4_autoware_utils::Point3d(x, y, z);
+  point.x = r_xy * std::cos(radar.azimuth);
+  point.y = r_xy * std::sin(radar.azimuth);
+  point.z = radar.range * std::sin(radar.elevation);
+  point.intensity = intensity;
+  return point;
 }
 
 geometry_msgs::msg::Point getPoint(const radar_msgs::msg::RadarReturn & radar)
