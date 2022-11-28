@@ -46,8 +46,8 @@ geometry_msgs::msg::Point getPoint(const radar_msgs::msg::RadarReturn & radar)
 geometry_msgs::msg::Vector3 getVelocity(const radar_msgs::msg::RadarReturn & radar)
 {
   return geometry_msgs::build<geometry_msgs::msg::Vector3>()
-    .x(radar.doppler_velocity)
-    .y(0.0)
+    .x(radar.doppler_velocity * std::cos(radar.azimuth))
+    .y(radar.doppler_velocity * std::sin(radar.azimuth))
     .z(0.0);
 }
 
