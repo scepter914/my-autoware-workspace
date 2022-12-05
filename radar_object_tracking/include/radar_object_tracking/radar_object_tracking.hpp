@@ -15,14 +15,29 @@
 #ifndef RADAR_OBJECT_TRACKING__RADAR_OBJECT_TRACKING_HPP__
 #define RADAR_OBJECT_TRACKING__RADAR_OBJECT_TRACKING_HPP__
 
+#include <Eigen/Dense>
 #include <rclcpp/logger.hpp>
+#include <tier4_autoware_utils/tier4_autoware_utils.hpp>
 
+#include <autoware_perception_msgs/msg/tracked_objects.hpp>
+#include <radar_msgs/msg/radar_scan.hpp>
+
+#include <boost/geometry.hpp>
+
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
 
+//#include <tf/transform_broadcaster.hpp>
+//#include <tf2/LinearMath/Quaternion.hpp>
+//#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
 namespace radar_object_tracking
 {
+using autoware_perception_msgs::msg::TrackedObjects;
+using radar_msgs::msg::RadarScan;
+
 class RadarObjectTracking
 {
 public:
@@ -30,26 +45,65 @@ public:
 
   struct Input
   {
-    int data{};
+    RadarScan::ConstPtr input_radar_msg{};
   };
 
   struct Output
   {
-    int data{};
+    TrackedObjects output_objects{};
   };
 
   struct Param
   {
-    int data{};
+    double update_rate{};
+    int num_frame{};
+    double clustering_range{};
+    double min_object_x{};
+    double min_object_y{};
+    double min_object_z{};
+    double min_sigma_doppler{};
+    double min_sigma_range{};
+    double max_object_acc{};
+    double object_confidence{};
+    int noise_thereshold_frame{};
+  };
+
+  struct Moment
+  {
+    double m_00 = 0.0;
+    double m_10 = 0.0;
+    double m_01 = 0.0;
+    double m_11 = 0.0;
+    double m_20 = 0.0;
+    double m_02 = 0.0;
   };
 
   void setParam(const Param & param) { param_ = param; }
+  void resisterPointcloud(const Input & input);
 
   Output update(const Input & input);
 
 private:
   rclcpp::Logger logger_;
   Param param_{};
+
+  // Data buffer
+  //! cluster_id[cluster_index][frame_index][clustered_point_index] = point_index
+  //! Point: buffer_points[frame_index].radar_pointclouds[point_index]
+  std::vector<std::vector<std::vector<int>>> cluster_id;
+  std::vector<RadarScan> buffer_points;
+
+  // Function
+  void updateBufferPoints(const RadarScan::ConstPtr & input);
+  void compensateEgoPosition();
+  void clusterPointcloud();
+  void clusterPointcloudOldFrame();
+  void removeNoisePoint();
+  bool ReflectFromSameObject(RadarScan rpc1, RadarScan rpc2);
+  bool ReflectFromSameObjectWithOldFrame(RadarScan rpc_new, RadarScan rpc_old, double delta_t);
+  TrackedObjects makeBoundingBoxes(std::string frame_id);
+};
+
 };
 
 }  // namespace radar_object_tracking
