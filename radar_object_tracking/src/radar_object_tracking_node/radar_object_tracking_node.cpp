@@ -56,6 +56,17 @@ RadarObjectTrackingNode::RadarObjectTrackingNode(const rclcpp::NodeOptions & nod
 
   // Node Parameter
   node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
+  // private_nh_.param("update_rate", core_param_.update_rate, 20.0);
+  // private_nh_.param("num_frame", core_param_.num_frame, 5);
+  // private_nh_.param("clustering_range", core_param_.clustering_range, 5.0);
+  // private_nh_.param("min_object_x", core_param_.min_object_x, 4.5);
+  // private_nh_.param("min_object_y", core_param_.min_object_y, 2.0);
+  // private_nh_.param("min_object_z", core_param_.min_object_z, 1.4);
+  // private_nh_.param("min_sigma_doppler", core_param_.min_sigma_doppler, 2.0);  // [m/s]
+  // private_nh_.param("min_sigma_range", core_param_.min_sigma_range, 3.0);
+  // private_nh_.param("max_object_acc", core_param_.max_object_acc, 3.0);  // [m/s^2]
+  // private_nh_.param("noise_thereshold_frame", core_param_.noise_thereshold_frame, 4);
+  // private_nh_.param("object_confidence", core_param_.object_confidence, 0.30);
 
   // Core Parameter
   core_param_.data = declare_parameter<int>("core_params.data");

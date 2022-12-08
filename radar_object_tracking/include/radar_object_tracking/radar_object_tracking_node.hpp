@@ -48,6 +48,7 @@ private:
 
   // Data Buffer
   Int32::ConstSharedPtr data_{};
+  int time_frame_ = 0;
 
   // Publisher
   rclcpp::Publisher<Int32>::SharedPtr pub_data_{};
