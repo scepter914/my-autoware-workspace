@@ -19,7 +19,7 @@
 #include <rclcpp/logger.hpp>
 #include <tier4_autoware_utils/tier4_autoware_utils.hpp>
 
-#include <autoware_perception_msgs/msg/tracked_objects.hpp>
+#include <autoware_auto_perception_msgs/msg/tracked_objects.hpp>
 #include <radar_msgs/msg/radar_scan.hpp>
 
 #include <boost/geometry.hpp>
@@ -29,13 +29,10 @@
 #include <string>
 #include <vector>
 
-// #include <tf/transform_broadcaster.hpp>
-// #include <tf2/LinearMath/Quaternion.hpp>
-// #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-
 namespace radar_object_tracking
 {
-using autoware_perception_msgs::msg::TrackedObjects;
+using autoware_auto_perception_msgs::msg::TrackedObjects;
+using radar_msgs::msg::RadarReturn;
 using radar_msgs::msg::RadarScan;
 
 class RadarObjectTracking
@@ -45,7 +42,7 @@ public:
 
   struct Input
   {
-    RadarScan::ConstPtr input_radar_msg{};
+    RadarScan::ConstSharedPtr radar_scan{};
   };
 
   struct Output
@@ -94,16 +91,14 @@ private:
   std::vector<RadarScan> buffer_points;
 
   // Function
-  void updateBufferPoints(const RadarScan::ConstPtr & input);
+  void updateBufferPoints(const RadarScan::ConstSharedPtr & input);
   void compensateEgoPosition();
   void clusterPointcloud();
   void clusterPointcloudOldFrame();
   void removeNoisePoint();
   bool ReflectFromSameObject(RadarScan rpc1, RadarScan rpc2);
   bool ReflectFromSameObjectWithOldFrame(RadarScan rpc_new, RadarScan rpc_old, double delta_t);
-  TrackedObjects makeBoundingBoxes(std::string frame_id);
-};
-
+  TrackedObjects makeBoundingBoxes();
 };
 
 }  // namespace radar_object_tracking

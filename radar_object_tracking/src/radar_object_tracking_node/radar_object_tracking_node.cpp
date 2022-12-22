@@ -158,12 +158,13 @@ void RadarObjectTrackingNode::onTimer()
 
   // Set input data
   RadarObjectTracking::Input input;
-  input.input_radar_msg = data_;
+  input.radar_scan = data_;
 
   // Update
+  radar_object_tracking_->resisterPointcloud(input);
   output_ = radar_object_tracking_->update(input);
 
-  pub_data->publish(output_.output_objects);
+  pub_data_->publish(output_.output_objects);
 }
 
 }  // namespace radar_object_tracking

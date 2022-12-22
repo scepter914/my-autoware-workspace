@@ -43,7 +43,11 @@ pcl::PointXYZI getPointXYZI(const radar_msgs::msg::RadarReturn & radar, float in
 
 geometry_msgs::msg::Point getPoint(const radar_msgs::msg::RadarReturn & radar)
 {
-  return tier4_autoware_utils::toMsg(getPoint3d(radar));
+  const float r_xy = radar.range * std::cos(radar.elevation);
+  const float x = r_xy * std::cos(radar.azimuth);
+  const float y = r_xy * std::sin(radar.azimuth);
+  const float z = radar.range * std::sin(radar.elevation);
+  return geometry_msgs::build<geometry_msgs::msg::Point>().x(x).y(y).z(z);
 }
 
 geometry_msgs::msg::Vector3 getVelocity(const radar_msgs::msg::RadarReturn & radar)
