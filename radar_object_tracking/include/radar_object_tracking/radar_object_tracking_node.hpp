@@ -17,8 +17,10 @@
 
 #include "radar_object_tracking/radar_object_tracking.hpp"
 
-#include <example_interfaces/msg/int32.hpp>
 #include <rclcpp/rclcpp.hpp>
+
+#include "autoware_auto_perception_msgs/msg/tracked_objects.hpp"
+#include <radar_msgs/msg/radar_scan.hpp>
 
 #include <chrono>
 #include <memory>
@@ -27,7 +29,10 @@
 
 namespace radar_object_tracking
 {
-using example_interfaces::msg::Int32;
+using autoware_auto_perception_msgs::msg::TrackedObject;
+using autoware_auto_perception_msgs::msg::TrackedObjects;
+using radar_msgs::msg::RadarReturn;
+using radar_msgs::msg::RadarScan;
 
 class RadarObjectTrackingNode : public rclcpp::Node
 {
@@ -41,17 +46,17 @@ public:
 
 private:
   // Subscriber
-  rclcpp::Subscription<Int32>::SharedPtr sub_data_{};
+  rclcpp::Subscription<RadarScan>::SharedPtr sub_data_{};
 
   // Callback
-  void onData(const Int32::ConstSharedPtr msg);
+  void onData(const RadarScan::ConstSharedPtr msg);
 
   // Data Buffer
-  Int32::ConstSharedPtr data_{};
+  RadarScan::ConstSharedPtr data_{};
   int time_frame_ = 0;
 
   // Publisher
-  rclcpp::Publisher<Int32>::SharedPtr pub_data_{};
+  rclcpp::Publisher<TrackedObjects>::SharedPtr pub_data_{};
 
   // Timer
   rclcpp::TimerBase::SharedPtr timer_{};

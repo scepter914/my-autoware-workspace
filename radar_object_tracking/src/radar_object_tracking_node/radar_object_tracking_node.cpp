@@ -40,6 +40,11 @@ bool update_param(
 
 namespace radar_object_tracking
 {
+using autoware_auto_perception_msgs::msg::TrackedObject;
+using autoware_auto_perception_msgs::msg::TrackedObjects;
+using radar_msgs::msg::RadarReturn;
+using radar_msgs::msg::RadarScan;
+
 using namespace std::literals;
 using std::chrono::duration;
 using std::chrono::duration_cast;
@@ -55,32 +60,31 @@ RadarObjectTrackingNode::RadarObjectTrackingNode(const rclcpp::NodeOptions & nod
     this->add_on_set_parameters_callback(std::bind(&RadarObjectTrackingNode::onSetParam, this, _1));
 
   // Node Parameter
-  node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 10.0);
-  // private_nh_.param("update_rate", core_param_.update_rate, 20.0);
-  // private_nh_.param("num_frame", core_param_.num_frame, 5);
-  // private_nh_.param("clustering_range", core_param_.clustering_range, 5.0);
-  // private_nh_.param("min_object_x", core_param_.min_object_x, 4.5);
-  // private_nh_.param("min_object_y", core_param_.min_object_y, 2.0);
-  // private_nh_.param("min_object_z", core_param_.min_object_z, 1.4);
-  // private_nh_.param("min_sigma_doppler", core_param_.min_sigma_doppler, 2.0);  // [m/s]
-  // private_nh_.param("min_sigma_range", core_param_.min_sigma_range, 3.0);
-  // private_nh_.param("max_object_acc", core_param_.max_object_acc, 3.0);  // [m/s^2]
-  // private_nh_.param("noise_thereshold_frame", core_param_.noise_thereshold_frame, 4);
-  // private_nh_.param("object_confidence", core_param_.object_confidence, 0.30);
+  node_param_.update_rate_hz = declare_parameter<double>("node_params.update_rate_hz", 20.0);
 
   // Core Parameter
-  core_param_.data = declare_parameter<int>("core_params.data");
+  core_param_.num_frame = declare_parameter<int>("core_params.num_frame", 5);
+  core_param_.clustering_range = declare_parameter<double>("core_params.clustering_range", 5.0);
+  core_param_.min_object_x = declare_parameter<double>("core_params.min_object_x", 4.5);
+  core_param_.min_object_y = declare_parameter<double>("core_params.min_object_y", 2.0);
+  core_param_.min_object_z = declare_parameter<double>("core_params.min_object_z", 1.4);
+  core_param_.min_sigma_doppler = declare_parameter<double>("core_params.min_sigma_doppler", 2.0);
+  core_param_.min_sigma_range = declare_parameter<double>("core_params.min_sigma_range", 3.0);
+  core_param_.max_object_acc = declare_parameter<double>("core_params.max_object_acc", 3.0);
+  core_param_.noise_thereshold_frame =
+    declare_parameter<int>("core_params.noise_thereshold_frame", 4);
+  core_param_.object_confidence = declare_parameter<double>("core_params.object_confidence", 0.30);
 
   // Core
   radar_object_tracking_ = std::make_unique<RadarObjectTracking>(get_logger());
   radar_object_tracking_->setParam(core_param_);
 
   // Subscriber
-  sub_data_ = create_subscription<Int32>(
-    "~/input/data", rclcpp::QoS{1}, std::bind(&RadarObjectTrackingNode::onData, this, _1));
+  sub_data_ = create_subscription<RadarScan>(
+    "~/input/radar", rclcpp::QoS{1}, std::bind(&RadarObjectTrackingNode::onData, this, _1));
 
   // Publisher
-  pub_data_ = create_publisher<Int32>("~/output/data", 1);
+  pub_data_ = create_publisher<TrackedObjects>("~/output/objects", 1);
 
   // Timer
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
@@ -88,7 +92,7 @@ RadarObjectTrackingNode::RadarObjectTrackingNode(const rclcpp::NodeOptions & nod
     this, get_clock(), update_period_ns, std::bind(&RadarObjectTrackingNode::onTimer, this));
 }
 
-void RadarObjectTrackingNode::onData(const Int32::ConstSharedPtr msg) { data_ = msg; }
+void RadarObjectTrackingNode::onData(const RadarScan::ConstSharedPtr msg) { data_ = msg; }
 
 rcl_interfaces::msg::SetParametersResult RadarObjectTrackingNode::onSetParam(
   const std::vector<rclcpp::Parameter> & params)
@@ -109,7 +113,16 @@ rcl_interfaces::msg::SetParametersResult RadarObjectTrackingNode::onSetParam(
       auto & p = core_param_;
 
       // Update params
-      update_param(params, "core_params.data", p.data);
+      update_param(params, "core_params.num_frame", p.num_frame);
+      update_param(params, "core_params.clustering_range", p.clustering_range);
+      update_param(params, "core_params.min_object_x", p.min_object_x);
+      update_param(params, "core_params.min_object_y", p.min_object_y);
+      update_param(params, "core_params.min_object_z", p.min_object_z);
+      update_param(params, "core_params.min_sigma_doppler", p.min_sigma_doppler);
+      update_param(params, "core_params.min_sigma_range", p.min_sigma_range);
+      update_param(params, "core_params.max_object_acc", p.max_object_acc);
+      update_param(params, "core_params.noise_thereshold_frame", p.noise_thereshold_frame);
+      update_param(params, "core_params.object_confidence", p.object_confidence);
 
       // Set parameter to instance
       if (radar_object_tracking_) {
@@ -145,17 +158,12 @@ void RadarObjectTrackingNode::onTimer()
 
   // Set input data
   RadarObjectTracking::Input input;
-
-  input.data = data_->data;
+  input.input_radar_msg = data_;
 
   // Update
   output_ = radar_object_tracking_->update(input);
 
-  // Sample
-  pub_data_->publish(example_interfaces::build<Int32>().data(output_.data));
-  // pub_data->publish(hoge_msgs);
-
-  RCLCPP_INFO(get_logger(), "input, output: %d, %d", input_.data, output_.data);
+  pub_data->publish(output_.output_objects);
 }
 
 }  // namespace radar_object_tracking
