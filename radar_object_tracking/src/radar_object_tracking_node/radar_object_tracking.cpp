@@ -161,10 +161,10 @@ void RadarObjectTracking::clusterPointcloud()
  * @param delta_t: time delay for two radar points
  */
 bool RadarObjectTracking::ReflectFromSameObjectWithOldFrame(
-  RadarScan rpc_new, RadarScan rpc_old, double delta_t)
+  RadarReturn rpc_new, RadarReturn rpc_old, double delta_t)
 {
-  auto p1 = tier4_autoware_utils::fromMsg(convertPoint(rpc1)).to_2d();
-  auto p2 = tier4_autoware_utils::fromMsg(convertPoint(rpc2)).to_2d();
+  auto p1 = tier4_autoware_utils::fromMsg(convertPoint(rpc_new)).to_2d();
+  auto p2 = tier4_autoware_utils::fromMsg(convertPoint(rpc_old)).to_2d();
 
   double doppler_th = param_.min_sigma_doppler;
   double range_th = param_.min_sigma_range;
@@ -243,7 +243,7 @@ TrackedObjects RadarObjectTracking::makeBoundingBoxes()
     // caliculate moment
     Moment m{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     double z_moment = 0.0;
-    RadarScan radar_min_range{};
+    RadarReturn radar_min_range{};
     for (const auto & p_id : cluster_id.at(i).at(0)) {
       // get radar pointcloud
       auto p = convertPoint(buffer_points.at(0).returns.at(p_id));
@@ -293,7 +293,7 @@ TrackedObjects RadarObjectTracking::makeBoundingBoxes()
     // modify centor of gravity
     auto pc_ = tier4_autoware_utils::fromMsg(pc).to_2d();
     // minmum range radarpoint
-    auto pmin_ = tier4_autoware_utils::fromMsg(getPoint(radar_min_range)).to_2d();
+    auto pmin_ = tier4_autoware_utils::fromMsg(convertPoint(radar_min_range)).to_2d();
     double ob_shape_x = std::max(param_.min_object_x * 0.5, boost::geometry::distance(pc_, pmin_));
     geometry_msgs::msg::Point new_pc;
     new_pc.x = pc.x + (ob_shape_x - param_.min_object_x * 0.5) * std::cos(yaw);
@@ -308,29 +308,29 @@ TrackedObjects RadarObjectTracking::makeBoundingBoxes()
 
     tf2::Quaternion quat;
     quat.setEuler(0.0, 0.0, yaw);
-    ob.kinematics.pose_covariance.pose.orientation = tf2::toMsg(quat);
+    ob.kinematics.pose_with_covariance.pose.orientation = tf2::toMsg(quat);
 
-    ob.kinematics.twist_covariance.twist.linear.x = radar_min_range.doppler_velocity;
-    ob.kinematics.twist_covariance.twist.linear.y = 0.0;
-    ob.kinematics.twist_covariance.twist.linear.z = 0.0;
+    ob.kinematics.twist_with_covariance.twist.linear.x = radar_min_range.doppler_velocity;
+    ob.kinematics.twist_with_covariance.twist.linear.y = 0.0;
+    ob.kinematics.twist_with_covariance.twist.linear.z = 0.0;
 
-    ob.shape.type = autoware_auto_perception_msgs::Shape::BOUNDING_BOX;
+    ob.shape.type = autoware_auto_perception_msgs::msg::Shape::BOUNDING_BOX;
     ob.shape.dimensions.x = 2.0f * ob_shape_x;
     ob.shape.dimensions.y = param_.min_object_y;
     ob.shape.dimensions.z = param_.min_object_z;
 
     autoware_auto_perception_msgs::msg::ObjectClassification label;
-    label.label = autoware_auto_perception_msgs::Semantic::CAR;
+    label.label = autoware_auto_perception_msgs::msg::ObjectClassification::CAR;
     ob.classification.push_back(label);
 
     objects.objects.push_back(ob);
   }
 
-  for (auto & ob : objects.feature_objects) {
-    ob.kinematics.pose_covariance.pose.position.x += 1.0;
-    ob.kinematics.pose_covariance.pose.position.z -= 1.5;
-    // tf2::doTransform( ob.kinematics.pose_covariance.pose, ob.kinematics.pose_covariance.pose,
-    // transformStamped);
+  for (auto & ob : objects.objects) {
+    ob.kinematics.pose_with_covariance.pose.position.x += 1.0;
+    ob.kinematics.pose_with_covariance.pose.position.z -= 1.5;
+    // tf2::doTransform( ob.kinematics.pose_with_covariance.pose,
+    // ob.kinematics.pose_with_covariance.pose, transformStamped);
   }
 
   return objects;

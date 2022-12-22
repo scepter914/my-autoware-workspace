@@ -96,8 +96,8 @@ private:
   void clusterPointcloud();
   void clusterPointcloudOldFrame();
   void removeNoisePoint();
-  bool ReflectFromSameObject(RadarScan rpc1, RadarScan rpc2);
-  bool ReflectFromSameObjectWithOldFrame(RadarScan rpc_new, RadarScan rpc_old, double delta_t);
+  bool ReflectFromSameObject(RadarReturn rpc1, RadarReturn rpc2);
+  bool ReflectFromSameObjectWithOldFrame(RadarReturn rpc_new, RadarReturn rpc_old, double delta_t);
   TrackedObjects makeBoundingBoxes();
 };
 
