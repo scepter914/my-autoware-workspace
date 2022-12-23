@@ -28,19 +28,19 @@ In detail, see [this document](/docs/algorithm.md)
 
 ### Parameters
 
-| Name                   | Type   | Description                                                                                                                                                                 |
-| ---------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| update_rate            | double | Update frame rate [hz]                                                                                                                                                      |
-| num_frame              | int    | Number of frame                                                                                                                                                             |
-| clustering_range       | double | Searching distance for DBSCAN, set to what want to detect (default set the size of car) [m]                                                                                 |
-| min_sigma_doppler      | double | Minimum doppler velocity variance to use clustering. If (difference of doppler velocity between near pointclouds) > 3 \* standard deviation, then not clustering. [(m/s)^2] |
-| min_sigma_range        | double | Minimum range variance for old frame clustering [m^2]                                                                                                                       |
-| max_object_acc         | double | Maximum object acceleration for old frame clustering [m/s^2]                                                                                                                |
-| min_object_x           | double | Minimum x size of object (default set the size of car) [m]                                                                                                                  |
-| min_object_y           | double | Minimum y size of object (default set the size of car) [m]                                                                                                                  |
-| min_object_z           | double | Minimum z size of object (default set the size of car) [m]                                                                                                                  |
-| object_confidence      | double | Object's confidence                                                                                                                                                         |
-| noise_thereshold_frame | int    | Sum of old frames which have clustering pointcloud < "noise_thereshold_frame", the id is noise point.                                                                       |
+| Name                  | Type   | Description                                                                                                                                                                 |
+| --------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| update_rate           | double | Update frame rate [hz]                                                                                                                                                      |
+| num_frame             | int    | Number of frame                                                                                                                                                             |
+| clustering_range      | double | Searching distance for DBSCAN, set to what want to detect (default set the size of car) [m]                                                                                 |
+| min_sigma_doppler     | double | Minimum doppler velocity variance to use clustering. If (difference of doppler velocity between near pointclouds) > 3 \* standard deviation, then not clustering. [(m/s)^2] |
+| min_sigma_range       | double | Minimum range variance for old frame clustering [m^2]                                                                                                                       |
+| max_object_acc        | double | Maximum object acceleration for old frame clustering [m/s^2]                                                                                                                |
+| min_object_x          | double | Minimum x size of object (default set the size of car) [m]                                                                                                                  |
+| min_object_y          | double | Minimum y size of object (default set the size of car) [m]                                                                                                                  |
+| min_object_z          | double | Minimum z size of object (default set the size of car) [m]                                                                                                                  |
+| object_confidence     | double | Output object's confidence                                                                                                                                                  |
+| noise_threshold_frame | int    | Sum of old frames which have clustering pointcloud < "noise_threshold_frame", the id is noise point.                                                                        |
 
 ### How to launch
 

@@ -16,7 +16,7 @@
 
 namespace
 {
-geometry_msgs::msg::Point convertPoint(const radar_msgs::msg::RadarReturn & radar)
+geometry_msgs::msg::Point toPoint(const radar_msgs::msg::RadarReturn & radar)
 {
   const float r_xy = radar.range * std::cos(radar.elevation);
   const float x = r_xy * std::cos(radar.azimuth);
@@ -32,6 +32,12 @@ using autoware_auto_perception_msgs::msg::TrackedObject;
 using autoware_auto_perception_msgs::msg::TrackedObjects;
 using radar_msgs::msg::RadarReturn;
 using radar_msgs::msg::RadarScan;
+
+void RadarObjectTracking::resisterPointcloud(const Input & input)
+{
+  updateBufferPoints(input.radar_scan);
+  compensateEgoPosition();
+}
 
 RadarObjectTracking::Output RadarObjectTracking::update(const RadarObjectTracking::Input & input)
 {
@@ -59,15 +65,7 @@ void RadarObjectTracking::updateBufferPoints(const RadarScan::ConstSharedPtr & r
 {
   cluster_id.clear();
   cluster_id.resize(0);
-  /*
-  if (param_.num_frame == 1) {
-    // single frame object detection
-    buffer_points.clear();
-  } else if (buffer_points.size() > param_.num_frame - 1) {
-    // multi frame object detection
-    buffer_points.resize(param_.num_frame - 1);
-  }
-  */
+
   buffer_points.insert(buffer_points.begin(), *radar_point_now);
   buffer_points.reserve(param_.num_frame);
 }
@@ -90,11 +88,10 @@ void RadarObjectTracking::compensateEgoPosition()
  */
 bool RadarObjectTracking::ReflectFromSameObject(RadarReturn rpc1, RadarReturn rpc2)
 {
-  auto p1 = tier4_autoware_utils::fromMsg(convertPoint(rpc1)).to_2d();
-  auto p2 = tier4_autoware_utils::fromMsg(convertPoint(rpc2)).to_2d();
+  auto p1 = tier4_autoware_utils::fromMsg(toPoint(rpc1)).to_2d();
+  auto p2 = tier4_autoware_utils::fromMsg(toPoint(rpc2)).to_2d();
   if (boost::geometry::distance(p1, p2) < param_.clustering_range) {
-    double doppler_th = param_.min_sigma_doppler;
-    if (std::abs(rpc1.doppler_velocity - rpc2.doppler_velocity) < doppler_th) {
+    if (std::abs(rpc1.doppler_velocity - rpc2.doppler_velocity) < param_.min_sigma_doppler) {
       return true;
     }
   }
@@ -107,21 +104,10 @@ bool RadarObjectTracking::ReflectFromSameObject(RadarReturn rpc1, RadarReturn rp
  */
 void RadarObjectTracking::clusterPointcloud()
 {
-  /*
-  for (int t = 0; t < 5; t++) {
-    for (int j = 0; j < buffer_points.at(t).radar_pointclouds.size(); j++) {
-      ROS_INFO(
-        "t:%d x:%f, y:%f", t,
-        buffer_points.at(t).radar_pointclouds.at(j).point_covariance.pose.position.x,
-        buffer_points.at(t).radar_pointclouds.at(j).point_covariance.pose.position.y);
-    }
-  }
-  */
   // init
   int num_points = buffer_points.at(0).returns.size();
   std::vector<bool> flag_visited(num_points, false);
   std::vector<int> stack;
-  // std::vector<std::vector<int>> new_cluster(param_.num_frame);
 
   for (int k = 0; k < num_points; k++) {
     if (flag_visited.at(k)) {
@@ -163,8 +149,8 @@ void RadarObjectTracking::clusterPointcloud()
 bool RadarObjectTracking::ReflectFromSameObjectWithOldFrame(
   RadarReturn rpc_new, RadarReturn rpc_old, double delta_t)
 {
-  auto p1 = tier4_autoware_utils::fromMsg(convertPoint(rpc_new)).to_2d();
-  auto p2 = tier4_autoware_utils::fromMsg(convertPoint(rpc_old)).to_2d();
+  auto p1 = tier4_autoware_utils::fromMsg(toPoint(rpc_new)).to_2d();
+  auto p2 = tier4_autoware_utils::fromMsg(toPoint(rpc_old)).to_2d();
 
   double doppler_th = param_.min_sigma_doppler;
   double range_th = param_.min_sigma_range;
@@ -223,13 +209,10 @@ void RadarObjectTracking::removeNoisePoint()
         old_point_num += 1;
       }
     }
+
     // if old points is too few, regard the core point as noise and remove it
     if (old_point_num < param_.noise_thereshold_frame) {
       cluster_id.erase(cluster_id.begin() + i);
-      /*
-      std::iter_swap(cluster_id.begin() + i, cluster_id.end());
-      cluster_id.pop_back();
-      */
     } else {
       i++;
     }
@@ -246,7 +229,7 @@ TrackedObjects RadarObjectTracking::makeBoundingBoxes()
     RadarReturn radar_min_range{};
     for (const auto & p_id : cluster_id.at(i).at(0)) {
       // get radar pointcloud
-      auto p = convertPoint(buffer_points.at(0).returns.at(p_id));
+      auto p = toPoint(buffer_points.at(0).returns.at(p_id));
       m.m_00 += 1.0;
       m.m_10 += p.x;
       m.m_01 += p.y;
@@ -293,7 +276,7 @@ TrackedObjects RadarObjectTracking::makeBoundingBoxes()
     // modify centor of gravity
     auto pc_ = tier4_autoware_utils::fromMsg(pc).to_2d();
     // minmum range radarpoint
-    auto pmin_ = tier4_autoware_utils::fromMsg(convertPoint(radar_min_range)).to_2d();
+    auto pmin_ = tier4_autoware_utils::fromMsg(toPoint(radar_min_range)).to_2d();
     double ob_shape_x = std::max(param_.min_object_x * 0.5, boost::geometry::distance(pc_, pmin_));
     geometry_msgs::msg::Point new_pc;
     new_pc.x = pc.x + (ob_shape_x - param_.min_object_x * 0.5) * std::cos(yaw);
@@ -334,12 +317,6 @@ TrackedObjects RadarObjectTracking::makeBoundingBoxes()
   }
 
   return objects;
-}
-
-void RadarObjectTracking::resisterPointcloud(const Input & input)
-{
-  updateBufferPoints(input.radar_scan);
-  compensateEgoPosition();
 }
 
 }  // namespace radar_object_tracking
