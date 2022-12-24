@@ -1,9 +1,0 @@
-<launch>
-  <arg name="input/radar" default="~/input/radar" />
-  <arg name="output/objects" default="~/output/objects" />
-
-  <node pkg="radar_object_tracking" exec="radar_object_tracking_node" name="radar_object_tracking" output="screen">
-    <remap from="~/input/radar" to="$(var input/radar)"/>
-    <remap from="~/output/objects" to="$(var output/objects)"/>
-  </node>
-</launch>
