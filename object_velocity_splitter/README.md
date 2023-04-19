@@ -1,7 +1,7 @@
 # object_velocity_splitter
 
 This package contains a object filter module for [autoware_auto_perception_msgs/msg/DetectedObject](https://gitlab.com/autowarefoundation/autoware.auto/autoware_auto_msgs/-/blob/master/autoware_auto_perception_msgs/msg/DetectedObject.idl).
-This package can split objects by object's speed.
+This package can split DetectedObjects into two messages by object's speed.
 
 ## Input
 
