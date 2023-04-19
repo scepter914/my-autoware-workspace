@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(object_filter)
+project(object_velocity_splitter)
 
 # Compile options
 if(NOT CMAKE_CXX_STANDARD)
@@ -18,12 +18,12 @@ autoware_package()
 
 # Targets
 ament_auto_add_library(object_filter_node_component SHARED
-  src/object_filter_node/object_filter_node.cpp
+  src/object_velocity_splitter_node/object_velocity_splitter_node.cpp
 )
 
-rclcpp_components_register_node(object_filter_node_component
-  PLUGIN "object_filter::ObjectFilterNode"
-  EXECUTABLE object_filter_node
+rclcpp_components_register_node(object_velocity_splitter_node_component
+  PLUGIN "object_velocity_splitter::ObjectVelocitySplitterNode"
+  EXECUTABLE object_velocity_splitter_node
 )
 
 # Tests

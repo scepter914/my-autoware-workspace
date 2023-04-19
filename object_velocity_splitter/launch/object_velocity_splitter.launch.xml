@@ -1,26 +1,22 @@
 <launch>
   <!-- Input -->
   <arg name="input/objects" default="~/input/objects" />
-
   <!-- Output -->
-  <arg name="output/objects" default="~/output/objects" />
-
+  <arg name="output/low_speed_objects" default="~/output/low_speed_objects" />
+  <arg name="output/high_speed_objects" default="~/output/high_speed_objects" />
   <!-- Parameter -->
   <arg name="update_rate_hz" default="10.0" />
-  <arg name="probability_threshold_upper" default="0.40" />
-  <arg name="probability_threshold_lower" default="0.27" />
+  <arg name="velocity_threshold" default="3.0" />
 
   <!-- Node -->
-  <node pkg="object_filter" exec="object_filter_node" name="object_filter" output="screen">
+  <node pkg="object_velocity_splitter" exec="object_velocity_splitter_node" name="object_velocity_splitter" output="screen">
     <!-- Input -->
     <remap from="~/input/objects" to="$(var input/objects)"/>
-
     <!-- Output -->
-    <remap from="~/output/objects" to="$(var output/objects)"/>
-
+    <remap from="~/output/low_speed_objects" to="$(var output/low_speed_objects)"/>
+    <remap from="~/output/high_speed_objects" to="$(var output/high_speed_objects)"/>
     <!-- Parameter -->
     <param name="update_rate_hz" value="$(var update_rate_hz)"/>
-    <param name="probability_threshold_upper" value="$(var probability_threshold_upper)" />
-    <param name="probability_threshold_lower" value="$(var probability_threshold_lower)" />
+    <param name="velocity_threshold" value="$(var velocity_threshold)" />
   </node>
 </launch>
