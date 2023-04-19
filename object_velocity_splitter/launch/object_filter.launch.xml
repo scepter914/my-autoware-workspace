@@ -1,0 +1,26 @@
+<launch>
+  <!-- Input -->
+  <arg name="input/objects" default="~/input/objects" />
+
+  <!-- Output -->
+  <arg name="output/objects" default="~/output/objects" />
+
+  <!-- Parameter -->
+  <arg name="update_rate_hz" default="10.0" />
+  <arg name="probability_threshold_upper" default="0.40" />
+  <arg name="probability_threshold_lower" default="0.27" />
+
+  <!-- Node -->
+  <node pkg="object_filter" exec="object_filter_node" name="object_filter" output="screen">
+    <!-- Input -->
+    <remap from="~/input/objects" to="$(var input/objects)"/>
+
+    <!-- Output -->
+    <remap from="~/output/objects" to="$(var output/objects)"/>
+
+    <!-- Parameter -->
+    <param name="update_rate_hz" value="$(var update_rate_hz)"/>
+    <param name="probability_threshold_upper" value="$(var probability_threshold_upper)" />
+    <param name="probability_threshold_lower" value="$(var probability_threshold_lower)" />
+  </node>
+</launch>
