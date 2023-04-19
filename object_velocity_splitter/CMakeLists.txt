@@ -17,7 +17,7 @@ find_package(autoware_cmake REQUIRED)
 autoware_package()
 
 # Targets
-ament_auto_add_library(object_filter_node_component SHARED
+ament_auto_add_library(object_velocity_splitter_node_component SHARED
   src/object_velocity_splitter_node/object_velocity_splitter_node.cpp
 )
 
