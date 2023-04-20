@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "object_filter/object_filter_node.hpp"
+#include "object_velocity_splitter/object_velocity_splitter_node.hpp"
 
 #include <memory>
 #include <string>
@@ -44,41 +44,42 @@ bool update_param(
 }
 }  // namespace
 
-namespace object_filter
+namespace object_velocity_splitter
 {
 using autoware_auto_perception_msgs::msg::DetectedObject;
 using autoware_auto_perception_msgs::msg::DetectedObjects;
 
-ObjectFilterNode::ObjectFilterNode(const rclcpp::NodeOptions & node_options)
-: Node("object_filter", node_options)
+ObjectVelocitySplitterNode::ObjectVelocitySplitterNode(const rclcpp::NodeOptions & node_options)
+: Node("object_velocity_splitter", node_options)
 {
   // Parameter Server
-  set_param_res_ =
-    this->add_on_set_parameters_callback(std::bind(&ObjectFilterNode::onSetParam, this, _1));
+  set_param_res_ = this->add_on_set_parameters_callback(
+    std::bind(&ObjectVelocitySplitterNode::onSetParam, this, _1));
 
   // Node Parameter
   node_param_.update_rate_hz = declare_parameter<double>("update_rate_hz", 10.0);
-  node_param_.probability_threshold_upper =
-    declare_parameter<double>("probability_threshold_upper", 1.0);
-  node_param_.probability_threshold_lower =
-    declare_parameter<double>("probability_threshold_lower", 0.40);
+  node_param_.velocity_threshold = declare_parameter<double>("velocity_threshold", 3.0);
 
   // Subscriber
   sub_objects_ = create_subscription<DetectedObjects>(
-    "~/input/objects", rclcpp::QoS{1}, std::bind(&ObjectFilterNode::onObjects, this, _1));
+    "~/input/objects", rclcpp::QoS{1}, std::bind(&ObjectVelocitySplitterNode::onObjects, this, _1));
 
   // Publisher
-  pub_objects_ = create_publisher<DetectedObjects>("~/output/objects", 1);
+  pub_high_speed_objects_ = create_publisher<DetectedObjects>("~/output/high_speed_objects", 1);
+  pub_low_speed_objects_ = create_publisher<DetectedObjects>("~/output/low_speed_objects", 1);
 
   // Timer
   const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
   timer_ = rclcpp::create_timer(
-    this, get_clock(), update_period_ns, std::bind(&ObjectFilterNode::onTimer, this));
+    this, get_clock(), update_period_ns, std::bind(&ObjectVelocitySplitterNode::onTimer, this));
 }
 
-void ObjectFilterNode::onObjects(const DetectedObjects::ConstSharedPtr msg) { objects_data_ = msg; }
+void ObjectVelocitySplitterNode::onObjects(const DetectedObjects::ConstSharedPtr msg)
+{
+  objects_data_ = msg;
+}
 
-rcl_interfaces::msg::SetParametersResult ObjectFilterNode::onSetParam(
+rcl_interfaces::msg::SetParametersResult ObjectVelocitySplitterNode::onSetParam(
   const std::vector<rclcpp::Parameter> & params)
 {
   rcl_interfaces::msg::SetParametersResult result;
@@ -90,8 +91,7 @@ rcl_interfaces::msg::SetParametersResult ObjectFilterNode::onSetParam(
 
       // Update params
       update_param(params, "update_rate_hz", p.update_rate_hz);
-      update_param(params, "probability_threshold_upper", p.probability_threshold_upper);
-      update_param(params, "probability_threshold_lower", p.probability_threshold_lower);
+      update_param(params, "velocity_threshold", p.velocity_threshold);
     }
 
   } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
@@ -105,42 +105,40 @@ rcl_interfaces::msg::SetParametersResult ObjectFilterNode::onSetParam(
   return result;
 }
 
-bool ObjectFilterNode::isDataReady()
+bool ObjectVelocitySplitterNode::isDataReady()
 {
   if (!objects_data_) {
     RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for data msg...");
     return false;
   }
-
   return true;
 }
 
-void ObjectFilterNode::onTimer()
+void ObjectVelocitySplitterNode::onTimer()
 {
   if (!isDataReady()) {
     return;
   }
-  DetectedObjects output_objects = update(objects_data_);
+  DetectedObjects high_speed_objects;
+  DetectedObjects low_speed_objects;
+  high_speed_objects.header = objects_data_->header;
+  low_speed_objects.header = objects_data_->header;
 
-  // publish
-  pub_objects_->publish(output_objects);
-}
-
-DetectedObjects ObjectFilterNode::update(DetectedObjects::ConstSharedPtr objects)
-{
-  DetectedObjects output_objects;
-  output_objects.header = objects->header;
-  for (const auto & object : objects->objects) {
+  for (const auto & object : objects_data_->objects) {
     if (
-      object.existence_probability < node_param_.probability_threshold_upper &&
-      object.existence_probability > node_param_.probability_threshold_lower) {
-      output_objects.objects.emplace_back(object);
+      std::abs(object.kinematics.twist_with_covariance.twist.linear.x) <
+      node_param_.velocity_threshold) {
+      low_speed_objects.objects.emplace_back(object);
+    } else {
+      high_speed_objects.objects.emplace_back(object);
     }
   }
-  return output_objects;
+  // publish
+  pub_high_speed_objects_->publish(high_speed_objects);
+  pub_low_speed_objects_->publish(low_speed_objects);
 }
 
-}  // namespace object_filter
+}  // namespace object_velocity_splitter
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(object_filter::ObjectFilterNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(object_velocity_splitter::ObjectVelocitySplitterNode)

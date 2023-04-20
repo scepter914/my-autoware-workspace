@@ -18,6 +18,6 @@ This package can split DetectedObjects into two messages by object's speed.
 
 ## Parameters
 
-| Name               | Type   | Description                               | Default value |
-| :----------------- | :----- | :---------------------------------------- | :------------ |
-| velocity_threshold | double | Velocity parameter to split objects [m/s] | 3.0           |
+| Name                 | Type   | Description                               | Default value |
+| :------------------- | :----- | :---------------------------------------- | :------------ |
+| `velocity_threshold` | double | Velocity parameter to split objects [m/s] | 3.0           |

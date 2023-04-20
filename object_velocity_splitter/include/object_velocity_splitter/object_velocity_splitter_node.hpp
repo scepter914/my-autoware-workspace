@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef OBJECT_FILTER__OBJECT_FILTER_NODE_HPP__
-#define OBJECT_FILTER__OBJECT_FILTER_NODE_HPP__
+#ifndef object_velocity_splitter__object_velocity_splitter_NODE_HPP__
+#define object_velocity_splitter__object_velocity_splitter_NODE_HPP__
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -24,21 +24,20 @@
 #include <string>
 #include <vector>
 
-namespace object_filter
+namespace object_velocity_splitter
 {
 using autoware_auto_perception_msgs::msg::DetectedObject;
 using autoware_auto_perception_msgs::msg::DetectedObjects;
 
-class ObjectFilterNode : public rclcpp::Node
+class ObjectVelocitySplitterNode : public rclcpp::Node
 {
 public:
-  explicit ObjectFilterNode(const rclcpp::NodeOptions & node_options);
+  explicit ObjectVelocitySplitterNode(const rclcpp::NodeOptions & node_options);
 
   struct NodeParam
   {
     double update_rate_hz{};
-    double probability_threshold_upper{};
-    double probability_threshold_lower{};
+    double velocity_threshold{};
   };
 
 private:
@@ -52,7 +51,8 @@ private:
   DetectedObjects::ConstSharedPtr objects_data_{};
 
   // Publisher
-  rclcpp::Publisher<DetectedObjects>::SharedPtr pub_objects_{};
+  rclcpp::Publisher<DetectedObjects>::SharedPtr pub_high_speed_objects_{};
+  rclcpp::Publisher<DetectedObjects>::SharedPtr pub_low_speed_objects_{};
 
   // Timer
   rclcpp::TimerBase::SharedPtr timer_{};
@@ -69,9 +69,8 @@ private:
   NodeParam node_param_{};
 
   // Core
-  DetectedObjects update(DetectedObjects::ConstSharedPtr objects);
 };
 
-}  // namespace object_filter
+}  // namespace object_velocity_splitter
 
-#endif  // OBJECT_FILTER__OBJECT_FILTER_NODE_HPP__
+#endif  // object_velocity_splitter__object_velocity_splitter_NODE_HPP__
