@@ -17,14 +17,10 @@ find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 # Targets
-ament_auto_add_library(my_utils_node_component SHARED
-  src/my_utils_node/twist_utils.cpp
-  src/my_utils_node/linear2d_utils.cpp
-)
-
-rclcpp_components_register_node(my_utils_node_component
-  PLUGIN "my_utils::MyUtilsNode"
-  EXECUTABLE my_utils_node
+ament_auto_add_library(my_utils SHARED
+  src/my_utils/twist_utils.cpp
+  src/my_utils/linear2d_utils.cpp
+  src/my_utils/radar_utils.cpp
 )
 
 # Tests
@@ -38,5 +34,4 @@ endif()
 # Package
 ament_auto_package(
   INSTALL_TO_SHARE
-  launch
 )
