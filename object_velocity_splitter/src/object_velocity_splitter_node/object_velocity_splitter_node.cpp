@@ -57,7 +57,6 @@ ObjectVelocitySplitterNode::ObjectVelocitySplitterNode(const rclcpp::NodeOptions
     std::bind(&ObjectVelocitySplitterNode::onSetParam, this, _1));
 
   // Node Parameter
-  node_param_.update_rate_hz = declare_parameter<double>("update_rate_hz", 10.0);
   node_param_.velocity_threshold = declare_parameter<double>("velocity_threshold", 3.0);
 
   // Subscriber
@@ -67,16 +66,32 @@ ObjectVelocitySplitterNode::ObjectVelocitySplitterNode(const rclcpp::NodeOptions
   // Publisher
   pub_high_speed_objects_ = create_publisher<DetectedObjects>("~/output/high_speed_objects", 1);
   pub_low_speed_objects_ = create_publisher<DetectedObjects>("~/output/low_speed_objects", 1);
-
-  // Timer
-  const auto update_period_ns = rclcpp::Rate(node_param_.update_rate_hz).period();
-  timer_ = rclcpp::create_timer(
-    this, get_clock(), update_period_ns, std::bind(&ObjectVelocitySplitterNode::onTimer, this));
 }
 
 void ObjectVelocitySplitterNode::onObjects(const DetectedObjects::ConstSharedPtr msg)
 {
   objects_data_ = msg;
+
+  if (!isDataReady()) {
+    return;
+  }
+  DetectedObjects high_speed_objects;
+  DetectedObjects low_speed_objects;
+  high_speed_objects.header = objects_data_->header;
+  low_speed_objects.header = objects_data_->header;
+
+  for (const auto & object : objects_data_->objects) {
+    if (
+      std::abs(object.kinematics.twist_with_covariance.twist.linear.x) <
+      node_param_.velocity_threshold) {
+      low_speed_objects.objects.emplace_back(object);
+    } else {
+      high_speed_objects.objects.emplace_back(object);
+    }
+  }
+  // publish
+  pub_high_speed_objects_->publish(high_speed_objects);
+  pub_low_speed_objects_->publish(low_speed_objects);
 }
 
 rcl_interfaces::msg::SetParametersResult ObjectVelocitySplitterNode::onSetParam(
@@ -90,7 +105,6 @@ rcl_interfaces::msg::SetParametersResult ObjectVelocitySplitterNode::onSetParam(
       auto & p = node_param_;
 
       // Update params
-      update_param(params, "update_rate_hz", p.update_rate_hz);
       update_param(params, "velocity_threshold", p.velocity_threshold);
     }
 
@@ -112,30 +126,6 @@ bool ObjectVelocitySplitterNode::isDataReady()
     return false;
   }
   return true;
-}
-
-void ObjectVelocitySplitterNode::onTimer()
-{
-  if (!isDataReady()) {
-    return;
-  }
-  DetectedObjects high_speed_objects;
-  DetectedObjects low_speed_objects;
-  high_speed_objects.header = objects_data_->header;
-  low_speed_objects.header = objects_data_->header;
-
-  for (const auto & object : objects_data_->objects) {
-    if (
-      std::abs(object.kinematics.twist_with_covariance.twist.linear.x) <
-      node_param_.velocity_threshold) {
-      low_speed_objects.objects.emplace_back(object);
-    } else {
-      high_speed_objects.objects.emplace_back(object);
-    }
-  }
-  // publish
-  pub_high_speed_objects_->publish(high_speed_objects);
-  pub_low_speed_objects_->publish(low_speed_objects);
 }
 
 }  // namespace object_velocity_splitter

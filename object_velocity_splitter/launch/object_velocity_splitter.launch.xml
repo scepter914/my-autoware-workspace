@@ -5,7 +5,6 @@
   <arg name="output/low_speed_objects" default="~/output/low_speed_objects" />
   <arg name="output/high_speed_objects" default="~/output/high_speed_objects" />
   <!-- Parameter -->
-  <arg name="update_rate_hz" default="10.0" />
   <arg name="velocity_threshold" default="3.0" />
 
   <!-- Node -->
@@ -16,7 +15,6 @@
     <remap from="~/output/low_speed_objects" to="$(var output/low_speed_objects)"/>
     <remap from="~/output/high_speed_objects" to="$(var output/high_speed_objects)"/>
     <!-- Parameter -->
-    <param name="update_rate_hz" value="$(var update_rate_hz)"/>
     <param name="velocity_threshold" value="$(var velocity_threshold)" />
   </node>
 </launch>
