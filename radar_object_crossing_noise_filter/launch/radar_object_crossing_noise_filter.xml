@@ -1,0 +1,20 @@
+<launch>
+  <!-- Input -->
+  <arg name="input/objects" default="~/input/objects" />
+  <!-- Output -->
+  <arg name="output/low_speed_objects" default="~/output/low_speed_objects" />
+  <arg name="output/high_speed_objects" default="~/output/high_speed_objects" />
+  <!-- Parameter -->
+  <arg name="velocity_threshold" default="3.0" />
+
+  <!-- Node -->
+  <node pkg="radar_object_crossing_noise_filter" exec="radar_object_crossing_noise_filter_node" name="radar_object_crossing_noise_filter" output="screen">
+    <!-- Input -->
+    <remap from="~/input/objects" to="$(var input/objects)"/>
+    <!-- Output -->
+    <remap from="~/output/low_speed_objects" to="$(var output/low_speed_objects)"/>
+    <remap from="~/output/high_speed_objects" to="$(var output/high_speed_objects)"/>
+    <!-- Parameter -->
+    <param name="velocity_threshold" value="$(var velocity_threshold)" />
+  </node>
+</launch>
