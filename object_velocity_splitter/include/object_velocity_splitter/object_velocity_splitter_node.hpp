@@ -53,11 +53,6 @@ private:
   rclcpp::Publisher<DetectedObjects>::SharedPtr pub_high_speed_objects_{};
   rclcpp::Publisher<DetectedObjects>::SharedPtr pub_low_speed_objects_{};
 
-  // Timer
-  rclcpp::TimerBase::SharedPtr timer_{};
-
-  bool isDataReady();
-
   // Parameter Server
   OnSetParametersCallbackHandle::SharedPtr set_param_res_;
   rcl_interfaces::msg::SetParametersResult onSetParam(

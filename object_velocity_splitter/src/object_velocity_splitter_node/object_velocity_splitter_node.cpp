@@ -68,13 +68,8 @@ ObjectVelocitySplitterNode::ObjectVelocitySplitterNode(const rclcpp::NodeOptions
   pub_low_speed_objects_ = create_publisher<DetectedObjects>("~/output/low_speed_objects", 1);
 }
 
-void ObjectVelocitySplitterNode::onObjects(const DetectedObjects::ConstSharedPtr msg)
+void ObjectVelocitySplitterNode::onObjects(const DetectedObjects::ConstSharedPtr objects_data_)
 {
-  objects_data_ = msg;
-
-  if (!isDataReady()) {
-    return;
-  }
   DetectedObjects high_speed_objects;
   DetectedObjects low_speed_objects;
   high_speed_objects.header = objects_data_->header;
@@ -117,15 +112,6 @@ rcl_interfaces::msg::SetParametersResult ObjectVelocitySplitterNode::onSetParam(
   result.successful = true;
   result.reason = "success";
   return result;
-}
-
-bool ObjectVelocitySplitterNode::isDataReady()
-{
-  if (!objects_data_) {
-    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for data msg...");
-    return false;
-  }
-  return true;
 }
 
 }  // namespace object_velocity_splitter
