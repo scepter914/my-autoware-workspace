@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "radar_tracks_crossing_noise_filter/radar_tracks_crossing_noise_filter_node.hpp"
+#include "radar_tracks_noise_filter/radar_tracks_noise_filter_node.hpp"
 
 #include <memory>
 #include <string>
@@ -44,14 +44,14 @@ bool update_param(
 }
 }  // namespace
 
-namespace radar_tracks_crossing_noise_filter
+namespace radar_tracks_noise_filter
 {
-using autoware_auto_perception_msgs::msg::RadarTrack;
-using autoware_auto_perception_msgs::msg::RadarTracks;
+using radar_msgs::msg::RadarTrack;
+using radar_msgs::msg::RadarTracks;
 
 RadarTrackCrossingNoiseFilterNode::RadarTrackCrossingNoiseFilterNode(
   const rclcpp::NodeOptions & node_options)
-: Node("radar_tracks_crossing_noise_filter", node_options)
+: Node("radar_tracks_noise_filter", node_options)
 {
   // Parameter Server
   set_param_res_ = this->add_on_set_parameters_callback(
@@ -132,8 +132,8 @@ bool RadarTrackCrossingNoiseFilterNode::isDataReady()
 
 bool RadarTrackCrossingNoiseFilterNode::isNoise(RadarTracks & object) {}
 
-}  // namespace radar_tracks_crossing_noise_filter
+}  // namespace radar_tracks_noise_filter
 
 #include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(
-  radar_tracks_crossing_noise_filter::RadarTrackCrossingNoiseFilterNode)
+  radar_tracks_noise_filter::RadarTrackCrossingNoiseFilterNode)

@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef radar_tracks_crossing_noise_filter__radar_tracks_crossing_noise_filter_NODE_HPP__
-#define radar_tracks_crossing_noise_filter__radar_tracks_crossing_noise_filter_NODE_HPP__
+#ifndef radar_tracks_noise_filter__radar_tracks_noise_filter_NODE_HPP__
+#define radar_tracks_noise_filter__radar_tracks_noise_filter_NODE_HPP__
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "autoware_auto_perception_msgs/msg/detected_objects.hpp"
+#include "radar_msgs/msg/radar_tracks.hpp"
 
 #include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace radar_tracks_crossing_noise_filter
+namespace radar_tracks_noise_filter
 {
-using autoware_auto_perception_msgs::msg::RadarTrack;
-using autoware_auto_perception_msgs::msg::RadarTracks;
+using radar_msgs::msg::RadarTrack;
+using radar_msgs::msg::RadarTracks;
 
 class RadarTrackCrossingNoiseFilterNode : public rclcpp::Node
 {
@@ -36,7 +36,7 @@ public:
 
   struct NodeParam
   {
-    double velocity_threshold{};
+    double velocity_y_threshold{};
   };
 
 private:
@@ -70,6 +70,6 @@ private:
   bool isNoise(RadarTracks & object);
 };
 
-}  // namespace radar_tracks_crossing_noise_filter
+}  // namespace radar_tracks_noise_filter
 
-#endif  // radar_tracks_crossing_noise_filter__radar_tracks_crossing_noise_filter_NODE_HPP__
+#endif  // radar_tracks_noise_filter__radar_tracks_noise_filter_NODE_HPP__

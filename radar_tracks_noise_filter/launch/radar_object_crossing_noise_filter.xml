@@ -8,7 +8,7 @@
   <arg name="velocity_threshold" default="3.0" />
 
   <!-- Node -->
-  <node pkg="radar_tracks_crossing_noise_filter" exec="radar_tracks_crossing_noise_filter_node" name="radar_tracks_crossing_noise_filter" output="screen">
+  <node pkg="radar_tracks_noise_filter" exec="radar_tracks_noise_filter_node" name="radar_tracks_noise_filter" output="screen">
     <!-- Input -->
     <remap from="~/input/objects" to="$(var input/objects)"/>
     <!-- Output -->
