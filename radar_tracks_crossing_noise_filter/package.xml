@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>radar_object_crossing_noise_filter</name>
+  <name>radar_tracks_crossing_noise_filter</name>
   <version>0.1.0</version>
-  <description>radar_object_crossing_noise_filter</description>
+  <description>radar_tracks_crossing_noise_filter</description>
   <author email="satoshi.tanaka@tier4.jp">Sathshi Tanaka</author>
   <maintainer email="satoshi.tanaka@tier4.jp">Sathshi Tanaka</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
-  <depend>autoware_auto_perception_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>radar_msgs</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
 

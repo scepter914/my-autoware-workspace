@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "radar_object_crossing_noise_filter/radar_object_crossing_noise_filter_node.hpp"
+#include "radar_tracks_crossing_noise_filter/radar_tracks_crossing_noise_filter_node.hpp"
 
 #include <memory>
 #include <string>
@@ -44,39 +44,41 @@ bool update_param(
 }
 }  // namespace
 
-namespace radar_object_crossing_noise_filter
+namespace radar_tracks_crossing_noise_filter
 {
-using autoware_auto_perception_msgs::msg::DetectedObject;
-using autoware_auto_perception_msgs::msg::DetectedObjects;
+using autoware_auto_perception_msgs::msg::RadarTrack;
+using autoware_auto_perception_msgs::msg::RadarTracks;
 
-RadarObjectCrossingNoiseFilterNode::RadarObjectCrossingNoiseFilterNode(const rclcpp::NodeOptions & node_options)
-: Node("radar_object_crossing_noise_filter", node_options)
+RadarTrackCrossingNoiseFilterNode::RadarTrackCrossingNoiseFilterNode(
+  const rclcpp::NodeOptions & node_options)
+: Node("radar_tracks_crossing_noise_filter", node_options)
 {
   // Parameter Server
   set_param_res_ = this->add_on_set_parameters_callback(
-    std::bind(&RadarObjectCrossingNoiseFilterNode::onSetParam, this, _1));
+    std::bind(&RadarTrackCrossingNoiseFilterNode::onSetParam, this, _1));
 
   // Node Parameter
   node_param_.velocity_threshold = declare_parameter<double>("velocity_threshold", 3.0);
 
   // Subscriber
-  sub_objects_ = create_subscription<DetectedObjects>(
-    "~/input/objects", rclcpp::QoS{1}, std::bind(&RadarObjectCrossingNoiseFilterNode::onObjects, this, _1));
+  sub_objects_ = create_subscription<RadarTracks>(
+    "~/input/objects", rclcpp::QoS{1},
+    std::bind(&RadarTrackCrossingNoiseFilterNode::onObjects, this, _1));
 
   // Publisher
-  pub_high_speed_objects_ = create_publisher<DetectedObjects>("~/output/high_speed_objects", 1);
-  pub_low_speed_objects_ = create_publisher<DetectedObjects>("~/output/low_speed_objects", 1);
+  pub_high_speed_objects_ = create_publisher<RadarTracks>("~/output/high_speed_objects", 1);
+  pub_low_speed_objects_ = create_publisher<RadarTracks>("~/output/low_speed_objects", 1);
 }
 
-void RadarObjectCrossingNoiseFilterNode::onObjects(const DetectedObjects::ConstSharedPtr msg)
+void RadarTrackCrossingNoiseFilterNode::onObjects(const RadarTracks::ConstSharedPtr msg)
 {
   objects_data_ = msg;
 
   if (!isDataReady()) {
     return;
   }
-  DetectedObjects high_speed_objects;
-  DetectedObjects low_speed_objects;
+  RadarTracks high_speed_objects;
+  RadarTracks low_speed_objects;
   high_speed_objects.header = objects_data_->header;
   low_speed_objects.header = objects_data_->header;
 
@@ -94,7 +96,7 @@ void RadarObjectCrossingNoiseFilterNode::onObjects(const DetectedObjects::ConstS
   pub_low_speed_objects_->publish(low_speed_objects);
 }
 
-rcl_interfaces::msg::SetParametersResult RadarObjectCrossingNoiseFilterNode::onSetParam(
+rcl_interfaces::msg::SetParametersResult RadarTrackCrossingNoiseFilterNode::onSetParam(
   const std::vector<rclcpp::Parameter> & params)
 {
   rcl_interfaces::msg::SetParametersResult result;
@@ -119,7 +121,7 @@ rcl_interfaces::msg::SetParametersResult RadarObjectCrossingNoiseFilterNode::onS
   return result;
 }
 
-bool RadarObjectCrossingNoiseFilterNode::isDataReady()
+bool RadarTrackCrossingNoiseFilterNode::isDataReady()
 {
   if (!objects_data_) {
     RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for data msg...");
@@ -128,7 +130,10 @@ bool RadarObjectCrossingNoiseFilterNode::isDataReady()
   return true;
 }
 
-}  // namespace radar_object_crossing_noise_filter
+bool RadarTrackCrossingNoiseFilterNode::isNoise(RadarTracks & object) {}
+
+}  // namespace radar_tracks_crossing_noise_filter
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(radar_object_crossing_noise_filter::RadarObjectCrossingNoiseFilterNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(
+  radar_tracks_crossing_noise_filter::RadarTrackCrossingNoiseFilterNode)

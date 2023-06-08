@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef radar_object_crossing_noise_filter__radar_object_crossing_noise_filter_NODE_HPP__
-#define radar_object_crossing_noise_filter__radar_object_crossing_noise_filter_NODE_HPP__
+#ifndef radar_tracks_crossing_noise_filter__radar_tracks_crossing_noise_filter_NODE_HPP__
+#define radar_tracks_crossing_noise_filter__radar_tracks_crossing_noise_filter_NODE_HPP__
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -24,15 +24,15 @@
 #include <string>
 #include <vector>
 
-namespace radar_object_crossing_noise_filter
+namespace radar_tracks_crossing_noise_filter
 {
-using autoware_auto_perception_msgs::msg::DetectedObject;
-using autoware_auto_perception_msgs::msg::DetectedObjects;
+using autoware_auto_perception_msgs::msg::RadarTrack;
+using autoware_auto_perception_msgs::msg::RadarTracks;
 
-class RadarObjectCrossingNoiseFilterNode : public rclcpp::Node
+class RadarTrackCrossingNoiseFilterNode : public rclcpp::Node
 {
 public:
-  explicit RadarObjectCrossingNoiseFilterNode(const rclcpp::NodeOptions & node_options);
+  explicit RadarTrackCrossingNoiseFilterNode(const rclcpp::NodeOptions & node_options);
 
   struct NodeParam
   {
@@ -41,17 +41,17 @@ public:
 
 private:
   // Subscriber
-  rclcpp::Subscription<DetectedObjects>::SharedPtr sub_objects_{};
+  rclcpp::Subscription<RadarTracks>::SharedPtr sub_objects_{};
 
   // Callback
-  void onObjects(const DetectedObjects::ConstSharedPtr msg);
+  void onObjects(const RadarTracks::ConstSharedPtr msg);
 
   // Data Buffer
-  DetectedObjects::ConstSharedPtr objects_data_{};
+  RadarTracks::ConstSharedPtr objects_data_{};
 
   // Publisher
-  rclcpp::Publisher<DetectedObjects>::SharedPtr pub_high_speed_objects_{};
-  rclcpp::Publisher<DetectedObjects>::SharedPtr pub_low_speed_objects_{};
+  rclcpp::Publisher<RadarTracks>::SharedPtr pub_high_speed_objects_{};
+  rclcpp::Publisher<RadarTracks>::SharedPtr pub_low_speed_objects_{};
 
   // Timer
   rclcpp::TimerBase::SharedPtr timer_{};
@@ -67,8 +67,9 @@ private:
   NodeParam node_param_{};
 
   // Core
+  bool isNoise(RadarTracks & object);
 };
 
-}  // namespace radar_object_crossing_noise_filter
+}  // namespace radar_tracks_crossing_noise_filter
 
-#endif  // radar_object_crossing_noise_filter__radar_object_crossing_noise_filter_NODE_HPP__
+#endif  // radar_tracks_crossing_noise_filter__radar_tracks_crossing_noise_filter_NODE_HPP__
