@@ -36,27 +36,19 @@ public:
 
   struct NodeParam
   {
-    double velocity_y_threshold{};
+    double velocity_angle_threshold{};
   };
 
 private:
   // Subscriber
-  rclcpp::Subscription<RadarTracks>::SharedPtr sub_objects_{};
+  rclcpp::Subscription<RadarTracks>::SharedPtr sub_tracks_{};
 
   // Callback
-  void onObjects(const RadarTracks::ConstSharedPtr msg);
-
-  // Data Buffer
-  RadarTracks::ConstSharedPtr objects_data_{};
+  void onTracks(const RadarTracks::ConstSharedPtr msg);
 
   // Publisher
-  rclcpp::Publisher<RadarTracks>::SharedPtr pub_high_speed_objects_{};
-  rclcpp::Publisher<RadarTracks>::SharedPtr pub_low_speed_objects_{};
-
-  // Timer
-  rclcpp::TimerBase::SharedPtr timer_{};
-
-  bool isDataReady();
+  rclcpp::Publisher<RadarTracks>::SharedPtr pub_noise_tracks_{};
+  rclcpp::Publisher<RadarTracks>::SharedPtr pub_filtered_tracks_{};
 
   // Parameter Server
   OnSetParametersCallbackHandle::SharedPtr set_param_res_;
@@ -67,7 +59,7 @@ private:
   NodeParam node_param_{};
 
   // Core
-  bool isNoise(RadarTracks & object);
+  bool isNoise(RadarTrack & track);
 };
 
 }  // namespace radar_tracks_noise_filter

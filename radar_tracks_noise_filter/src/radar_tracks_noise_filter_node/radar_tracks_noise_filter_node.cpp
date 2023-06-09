@@ -58,42 +58,36 @@ RadarTrackCrossingNoiseFilterNode::RadarTrackCrossingNoiseFilterNode(
     std::bind(&RadarTrackCrossingNoiseFilterNode::onSetParam, this, _1));
 
   // Node Parameter
-  node_param_.velocity_threshold = declare_parameter<double>("velocity_threshold", 3.0);
+  node_param_.velocity_angle_threshold =
+    declare_parameter<double>("velocity_angle_threshold", 1.0472);
 
   // Subscriber
-  sub_objects_ = create_subscription<RadarTracks>(
-    "~/input/objects", rclcpp::QoS{1},
-    std::bind(&RadarTrackCrossingNoiseFilterNode::onObjects, this, _1));
+  sub_tracks_ = create_subscription<RadarTracks>(
+    "~/input/tracks", rclcpp::QoS{1},
+    std::bind(&RadarTrackCrossingNoiseFilterNode::onTracks, this, _1));
 
   // Publisher
-  pub_high_speed_objects_ = create_publisher<RadarTracks>("~/output/high_speed_objects", 1);
-  pub_low_speed_objects_ = create_publisher<RadarTracks>("~/output/low_speed_objects", 1);
+  pub_noise_tracks_ = create_publisher<RadarTracks>("~/output/noise_tracks", 1);
+  pub_filtered_tracks_ = create_publisher<RadarTracks>("~/output/filtered_tracks", 1);
 }
 
-void RadarTrackCrossingNoiseFilterNode::onObjects(const RadarTracks::ConstSharedPtr msg)
+void RadarTrackCrossingNoiseFilterNode::onTracks(const RadarTracks::ConstSharedPtr msg)
 {
-  objects_data_ = msg;
+  RadarTracks noise_tracks;
+  RadarTracks filtered_tracks;
+  high_speed_tracks.header = msg->header;
+  low_speed_tracks.header = msg->header;
 
-  if (!isDataReady()) {
-    return;
-  }
-  RadarTracks high_speed_objects;
-  RadarTracks low_speed_objects;
-  high_speed_objects.header = objects_data_->header;
-  low_speed_objects.header = objects_data_->header;
-
-  for (const auto & object : objects_data_->objects) {
-    if (
-      std::abs(object.kinematics.twist_with_covariance.twist.linear.x) <
-      node_param_.velocity_threshold) {
-      low_speed_objects.objects.emplace_back(object);
+  for (const auto & radar_track : msg->tracks) {
+    if (isNoise(radar_track)) {
+      noise_tracks.tracks.emplace_back(radar_track);
     } else {
-      high_speed_objects.objects.emplace_back(object);
+      filtered_tracks.tracks.emplace_back(radar_track);
     }
   }
   // publish
-  pub_high_speed_objects_->publish(high_speed_objects);
-  pub_low_speed_objects_->publish(low_speed_objects);
+  pub_high_speed_tracks_->publish(high_speed_tracks);
+  pub_low_speed_tracks_->publish(low_speed_tracks);
 }
 
 rcl_interfaces::msg::SetParametersResult RadarTrackCrossingNoiseFilterNode::onSetParam(
@@ -121,19 +115,9 @@ rcl_interfaces::msg::SetParametersResult RadarTrackCrossingNoiseFilterNode::onSe
   return result;
 }
 
-bool RadarTrackCrossingNoiseFilterNode::isDataReady()
-{
-  if (!objects_data_) {
-    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "waiting for data msg...");
-    return false;
-  }
-  return true;
-}
-
-bool RadarTrackCrossingNoiseFilterNode::isNoise(RadarTracks & object) {}
+bool RadarTrackCrossingNoiseFilterNode::isNoise(RadarTrack & track) {}
 
 }  // namespace radar_tracks_noise_filter
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(
-  radar_tracks_noise_filter::RadarTrackCrossingNoiseFilterNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(radar_tracks_noise_filter::RadarTrackCrossingNoiseFilterNode)
