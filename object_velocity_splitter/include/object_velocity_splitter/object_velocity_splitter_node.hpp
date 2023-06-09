@@ -60,8 +60,6 @@ private:
 
   // Parameter
   NodeParam node_param_{};
-
-  // Core
 };
 
 }  // namespace object_velocity_splitter

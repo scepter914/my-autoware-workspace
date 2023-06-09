@@ -18,12 +18,6 @@
 #include <string>
 #include <vector>
 
-using namespace std::literals;
-using std::chrono::duration;
-using std::chrono::duration_cast;
-using std::chrono::nanoseconds;
-using std::placeholders::_1;
-
 namespace
 {
 template <class T>
@@ -102,7 +96,6 @@ rcl_interfaces::msg::SetParametersResult ObjectVelocitySplitterNode::onSetParam(
       // Update params
       update_param(params, "velocity_threshold", p.velocity_threshold);
     }
-
   } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
     result.successful = false;
     result.reason = e.what();
