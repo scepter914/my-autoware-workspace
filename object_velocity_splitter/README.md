@@ -7,7 +7,7 @@ This package can split DetectedObjects into two messages by object's speed.
 
 | Name              | Type                                                 | Description          |
 | ----------------- | ---------------------------------------------------- | -------------------- |
-| `~/input/objects` | autoware_auto_perception_msgs/msg/DetectedObject.msg | 3D detected objects. |
+| `~/input/objects` | autoware_auto_perception_msgs/msg/DetectedObjects.msg | 3D detected objects. |
 
 ## Output
 
