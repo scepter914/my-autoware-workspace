@@ -48,14 +48,15 @@ ObjectVelocitySplitterNode::ObjectVelocitySplitterNode(const rclcpp::NodeOptions
 {
   // Parameter Server
   set_param_res_ = this->add_on_set_parameters_callback(
-    std::bind(&ObjectVelocitySplitterNode::onSetParam, this, _1));
+    std::bind(&ObjectVelocitySplitterNode::onSetParam, this, std::placeholders::_1));
 
   // Node Parameter
   node_param_.velocity_threshold = declare_parameter<double>("velocity_threshold", 3.0);
 
   // Subscriber
   sub_objects_ = create_subscription<DetectedObjects>(
-    "~/input/objects", rclcpp::QoS{1}, std::bind(&ObjectVelocitySplitterNode::onObjects, this, _1));
+    "~/input/objects", rclcpp::QoS{1},
+    std::bind(&ObjectVelocitySplitterNode::onObjects, this, std::placeholders::_1));
 
   // Publisher
   pub_high_speed_objects_ = create_publisher<DetectedObjects>("~/output/high_speed_objects", 1);
