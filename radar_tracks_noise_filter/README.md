@@ -1,23 +1,23 @@
 # radar_tracks_noise_filter
 
-This package contains a radar object filter module for [autoware_auto_perception_msgs/msg/RadarTrack](https://gitlab.com/autowarefoundation/autoware.auto/autoware_auto_msgs/-/blob/master/autoware_auto_perception_msgs/msg/RadarTrack.idl).
-This package can split RadarTracks into two messages by object's speed.
+This package contains a radar object filter module for `radar_msgs/msg/RadarTrack`.
+This package can filter noise objects in RadarTracks.
 
 ## Input
 
-| Name             | Type                                             | Description         |
-| ---------------- | ------------------------------------------------ | ------------------- |
-| `~/input/tracks` | autoware_auto_perception_msgs/msg/RadarTrack.msg | 3D detected tracks. |
+| Name             | Type                           | Description         |
+| ---------------- | ------------------------------ | ------------------- |
+| `~/input/tracks` | radar_msgs/msg/RadarTracks.msg | 3D detected tracks. |
 
 ## Output
 
-| Name                         | Type                                              | Description            |
-| ---------------------------- | ------------------------------------------------- | ---------------------- |
-| `~/output/low_speed_tracks`  | autoware_auto_perception_msgs/msg/RadarTracks.msg | tracks with low speed  |
-| `~/output/high_speed_tracks` | autoware_auto_perception_msgs/msg/RadarTracks.msg | tracks with high speed |
+| Name                       | Type                           | Description           |
+| -------------------------- | ------------------------------ | --------------------- |
+| `~/output/noise_tracks`    | radar_msgs/msg/RadarTracks.msg | Noise objects         |
+| `~/output/filtered_tracks` | radar_msgs/msg/RadarTracks.msg | Objects without noise |
 
 ## Parameters
 
-| Name                 | Type   | Description                              | Default value |
-| :------------------- | :----- | :--------------------------------------- | :------------ |
-| `velocity_threshold` | double | Velocity parameter to split tracks [m/s] | 3.0           |
+| Name                   | Type   | Description                     | Default value |
+| :--------------------- | :----- | :------------------------------ | :------------ |
+| `velocity_y_threshold` | double | Y-axis velocity threshold [m/s] | 2.0           |
