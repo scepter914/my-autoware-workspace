@@ -18,12 +18,6 @@
 #include <string>
 #include <vector>
 
-using namespace std::literals;
-using std::chrono::duration;
-using std::chrono::duration_cast;
-using std::chrono::nanoseconds;
-using std::placeholders::_1;
-
 namespace
 {
 template <class T>
@@ -55,16 +49,15 @@ RadarTrackCrossingNoiseFilterNode::RadarTrackCrossingNoiseFilterNode(
 {
   // Parameter Server
   set_param_res_ = this->add_on_set_parameters_callback(
-    std::bind(&RadarTrackCrossingNoiseFilterNode::onSetParam, this, _1));
+    std::bind(&RadarTrackCrossingNoiseFilterNode::onSetParam, this, std::placeholders::_1));
 
   // Node Parameter
-  node_param_.velocity_angle_threshold =
-    declare_parameter<double>("velocity_angle_threshold", 1.0472);
+  node_param_.velocity_y_threshold = declare_parameter<double>("velocity_y_threshold", 1.0472);
 
   // Subscriber
   sub_tracks_ = create_subscription<RadarTracks>(
     "~/input/tracks", rclcpp::QoS{1},
-    std::bind(&RadarTrackCrossingNoiseFilterNode::onTracks, this, _1));
+    std::bind(&RadarTrackCrossingNoiseFilterNode::onTracks, this, std::placeholders::_1));
 
   // Publisher
   pub_noise_tracks_ = create_publisher<RadarTracks>("~/output/noise_tracks", 1);
@@ -75,8 +68,8 @@ void RadarTrackCrossingNoiseFilterNode::onTracks(const RadarTracks::ConstSharedP
 {
   RadarTracks noise_tracks;
   RadarTracks filtered_tracks;
-  high_speed_tracks.header = msg->header;
-  low_speed_tracks.header = msg->header;
+  noise_tracks.header = msg->header;
+  filtered_tracks.header = msg->header;
 
   for (const auto & radar_track : msg->tracks) {
     if (isNoise(radar_track)) {
@@ -86,8 +79,8 @@ void RadarTrackCrossingNoiseFilterNode::onTracks(const RadarTracks::ConstSharedP
     }
   }
   // publish
-  pub_high_speed_tracks_->publish(high_speed_tracks);
-  pub_low_speed_tracks_->publish(low_speed_tracks);
+  pub_noise_tracks_->publish(noise_tracks);
+  pub_filtered_tracks_->publish(filtered_tracks);
 }
 
 rcl_interfaces::msg::SetParametersResult RadarTrackCrossingNoiseFilterNode::onSetParam(
@@ -101,7 +94,7 @@ rcl_interfaces::msg::SetParametersResult RadarTrackCrossingNoiseFilterNode::onSe
       auto & p = node_param_;
 
       // Update params
-      update_param(params, "velocity_threshold", p.velocity_threshold);
+      update_param(params, "velocity_y_threshold", p.velocity_y_threshold);
     }
 
   } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
@@ -115,7 +108,14 @@ rcl_interfaces::msg::SetParametersResult RadarTrackCrossingNoiseFilterNode::onSe
   return result;
 }
 
-bool RadarTrackCrossingNoiseFilterNode::isNoise(RadarTrack & track) {}
+bool RadarTrackCrossingNoiseFilterNode::isNoise(const RadarTrack & radar_track)
+{
+  if (std::abs(radar_track.velocity.y) < node_param_.velocity_y_threshold) {
+    return false;
+  } else {
+    return true;
+  }
+}
 
 }  // namespace radar_tracks_noise_filter
 

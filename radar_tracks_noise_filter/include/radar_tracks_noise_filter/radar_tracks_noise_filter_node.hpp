@@ -36,7 +36,7 @@ public:
 
   struct NodeParam
   {
-    double velocity_angle_threshold{};
+    double velocity_y_threshold{};
   };
 
 private:
@@ -59,7 +59,7 @@ private:
   NodeParam node_param_{};
 
   // Core
-  bool isNoise(RadarTrack & track);
+  bool isNoise(const RadarTrack & radar_track);
 };
 
 }  // namespace radar_tracks_noise_filter
